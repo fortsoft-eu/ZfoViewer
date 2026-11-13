@@ -238,8 +238,12 @@ static HRESULT LoadPrintRuntime() {
 
 /// Selects the modern printing path for Windows 11 system builds.
 bool UseModernPrintDialog() {
+    HMODULE module = GetModuleHandleW(L"ntdll.dll");
+    if (!module) {
+        return false;
+    }
     GetVersionFunction getVersion =
-        reinterpret_cast<GetVersionFunction>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion"));
+        reinterpret_cast<GetVersionFunction>(GetProcAddress(module, "RtlGetVersion"));
     OSVERSIONINFOW version = OSVERSIONINFOW{};
     version.dwOSVersionInfoSize = sizeof(version);
     return getVersion
@@ -926,7 +930,7 @@ HRESULT ModernPrintDialog::MakeDocument(IInspectable* options, IPrintDocumentPac
 }
 
 /// Applies the stored paper size and orientation to the system print task options.
-void ModernPrintDialog::ApplySettings(Printing::IPrintTaskOptionsCore* options) {
+void ModernPrintDialog::ApplySettings(Printing::IPrintTaskOptionsCore* options) const {
     ComPtr<Printing::IPrintTaskOptionsCoreProperties> properties;
     if (FAILED(options->QueryInterface(IID_PPV_ARGS(&properties)))) {
         return;

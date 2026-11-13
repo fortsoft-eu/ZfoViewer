@@ -684,6 +684,15 @@ void MainForm::OpenDialog(bool folder) {
     }
 }
 
+/// Applies the filename-extension preference without changing the filename stem or parent directory.
+void MainForm::ApplyExtensionCase(std::filesystem::path& path) const {
+    if (settings.lowercaseExtensions) {
+        std::wstring extension = path.extension().wstring();
+        CharLowerBuffW(extension.data(), static_cast<DWORD>(extension.size()));
+        path.replace_extension(extension);
+    }
+}
+
 /// Shows the native Save As dialog and returns its selected path and optional export-format index.
 std::filesystem::path MainForm::SaveDialog(const std::wstring& name, const wchar_t* extension,
         const COMDLG_FILTERSPEC* filters, UINT count, UINT* type, const wchar_t* title) const {
@@ -692,7 +701,9 @@ std::filesystem::path MainForm::SaveDialog(const std::wstring& name, const wchar
         IID_PPV_ARGS(&dialog)))) {
         throw std::runtime_error("unexpectedError");
     }
-    HRESULT result = dialog->SetOptions(FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT
+    HRESULT result = dialog->SetOptions(FOS_FORCEFILESYSTEM
+        | FOS_PATHMUSTEXIST
+        | FOS_OVERWRITEPROMPT
         | FOS_NOREADONLYRETURN);
     if (FAILED(result)) {
         throw std::runtime_error("saveFailed");
@@ -707,7 +718,9 @@ std::filesystem::path MainForm::SaveDialog(const std::wstring& name, const wchar
     if (extension && FAILED(dialog->SetDefaultExtension(extension))) {
         throw std::runtime_error("saveFailed");
     }
-    if (FAILED(dialog->SetFileName(name.c_str())) || title && FAILED(dialog->SetTitle(title))) {
+    std::filesystem::path fileName(name);
+    ApplyExtensionCase(fileName);
+    if (FAILED(dialog->SetFileName(fileName.c_str())) || title && FAILED(dialog->SetTitle(title))) {
         throw std::runtime_error("saveFailed");
     }
     result = dialog->Show(window);
@@ -720,7 +733,9 @@ std::filesystem::path MainForm::SaveDialog(const std::wstring& name, const wchar
     if (type && FAILED(dialog->GetFileTypeIndex(type))) {
         throw std::runtime_error("saveFailed");
     }
-    return DialogPath(dialog.Get());
+    std::filesystem::path path = DialogPath(dialog.Get());
+    ApplyExtensionCase(path);
+    return path;
 }
 
 /// Saves the active tab's original ZFO bytes independently of later changes to the source file.

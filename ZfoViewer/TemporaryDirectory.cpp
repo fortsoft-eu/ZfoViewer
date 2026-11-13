@@ -63,9 +63,10 @@ static bool IsTemporaryName(const wchar_t* name) {
     }
     for (size_t index = 3; index < length - 4; ++index) {
         wchar_t value = name[index];
-        if (!(value >= L'0' && value <= L'9'
-                || value >= L'A' && value <= L'F'
-                || value >= L'a' && value <= L'f')) {
+        const bool digit = value >= L'0' && value <= L'9';
+        const bool upperHex = value >= L'A' && value <= L'F';
+        const bool lowerHex = value >= L'a' && value <= L'f';
+        if (!(digit || upperHex || lowerHex)) {
             return false;
         }
     }

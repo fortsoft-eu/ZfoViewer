@@ -46,6 +46,7 @@ struct AppSettings {
     bool smoothScrolling = false;
     bool highlightMessage = true;
     bool highlightSource = true;
+    bool lowercaseExtensions = true;
 
     /// Independent report and XML source font selections.
     ViewerFont messageFont;

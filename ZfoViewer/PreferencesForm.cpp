@@ -42,6 +42,7 @@ static constexpr std::pair<int, const char*> preferencesTextLabels[] = {
     { IDC_SOURCE_FONT_DEFAULT, "fontDefault" },
     { IDC_HIGHLIGHT_MESSAGE, "highlightMessage" },
     { IDC_HIGHLIGHT_SOURCE, "highlightSource" },
+    { IDC_LOWERCASE_EXTENSIONS, "lowercaseExtensions" },
     { IDC_PREFERENCES_LANGUAGE_LABEL, "languageLabel" },
     { IDC_TAB_NAME_LABEL, "tabNameLength" },
     { IDC_TITLE_NAME_LABEL, "titleNameLength" },
@@ -424,10 +425,13 @@ void PreferencesForm::LayoutControls() {
     PlaceControl(titleNumber, rightButton, 0, button.cx, numberBounds.bottom - numberBounds.top);
     HWND messageColors = GetDlgItem(window, IDC_HIGHLIGHT_MESSAGE);
     HWND sourceColors = GetDlgItem(window, IDC_HIGHLIGHT_SOURCE);
+    HWND lowercase = GetDlgItem(window, IDC_LOWERCASE_EXTENSIONS);
     SIZE messageColorsSize = PreferredButtonSize(messageColors, SIZE{ 0, button.cy });
     SIZE sourceColorsSize = PreferredButtonSize(sourceColors, SIZE{ 0, button.cy });
+    SIZE lowercaseSize = PreferredButtonSize(lowercase, SIZE{ 0, button.cy });
     LONG labelWidth = std::max(recentWidth, PreferenceLabelWidth(window, IDC_TITLE_NAME_LABEL));
     LONG colorWidth = std::max(messageColorsSize.cx, sourceColorsSize.cx);
+    colorWidth = std::max(colorWidth, lowercaseSize.cx);
     LONG rightColumn = std::min(rightButton - gap.cx - labelWidth, right - colorWidth);
     PlaceControl(GetDlgItem(window, IDC_TITLE_NAME_LABEL), rightColumn, 0,
         rightButton - gap.cx - rightColumn, 1);
@@ -438,6 +442,7 @@ void PreferencesForm::LayoutControls() {
     PlaceControl(smooth, margin.cx, 0, checkWidth, smoothSize.cy);
     PlaceControl(messageColors, rightColumn, 0, right - rightColumn, messageColorsSize.cy);
     PlaceControl(sourceColors, rightColumn, 0, right - rightColumn, sourceColorsSize.cy);
+    PlaceControl(lowercase, rightColumn, 0, right - rightColumn, lowercaseSize.cy);
     PlaceControl(multiple, margin.cx, 0, multipleSize.cx, multipleSize.cy);
     PlaceControl(clear, rightButton, 0, button.cx, button.cy);
     PlaceControl(GetDlgItem(window, IDC_RECENT_LABEL), rightColumn, 0,
@@ -466,7 +471,8 @@ void PreferencesForm::LayoutControls() {
         { IDC_TAB_NAME_LABEL, IDC_TAB_NAME_LENGTH, IDC_TITLE_NAME_LENGTH, IDC_TITLE_NAME_LABEL },
         { 0, IDC_SMOOTH_SCROLLING, IDC_HIGHLIGHT_MESSAGE, 0 },
         { 0, IDC_CLOSE_TABS_ON_DOUBLE_CLICK, IDC_HIGHLIGHT_SOURCE, 0 },
-        { IDC_RECENT_LABEL, IDC_RECENT_CLEAR, ID_MULTIPLE_INSTANCES, 0 }
+        { 0, ID_MULTIPLE_INSTANCES, IDC_LOWERCASE_EXTENSIONS, 0 },
+        { IDC_RECENT_LABEL, IDC_RECENT_CLEAR, 0, 0 }
     };
     LONG above = 0;
     LONG below = 0;
@@ -639,6 +645,7 @@ void PreferencesForm::UpdateApply() {
         IDC_PREFERENCES_LANGUAGE, CB_GETCURSEL, 0, 0));
     UINT length = GetDlgItemInt(window, IDC_TAB_NAME_LENGTH, nullptr, FALSE);
     UINT titleLength = GetDlgItemInt(window, IDC_TITLE_NAME_LENGTH, nullptr, FALSE);
+    const bool lowercase = IsDlgButtonChecked(window, IDC_LOWERCASE_EXTENSIONS) == BST_CHECKED;
     bool changed = selected != GetApplicationLanguage()
         || length != settings->tabNameLength
         || titleLength != settings->titleNameLength
@@ -646,6 +653,7 @@ void PreferencesForm::UpdateApply() {
         || !EqualViewerFonts(sourceFont, settings->sourceFont)
         || IsDlgButtonChecked(window, IDC_HIGHLIGHT_MESSAGE) == BST_CHECKED != settings->highlightMessage
         || IsDlgButtonChecked(window, IDC_HIGHLIGHT_SOURCE) == BST_CHECKED != settings->highlightSource
+        || lowercase != settings->lowercaseExtensions
         || IsDlgButtonChecked(window, ID_MULTIPLE_INSTANCES) == BST_CHECKED != settings->multipleInstances
         || IsDlgButtonChecked(window, IDC_CLOSE_TABS_ON_DOUBLE_CLICK) == BST_CHECKED
             != settings->closeTabsOnDoubleClick
@@ -676,6 +684,7 @@ bool PreferencesForm::Apply() {
     next.sourceFont = sourceFont;
     next.highlightMessage = IsDlgButtonChecked(window, IDC_HIGHLIGHT_MESSAGE) == BST_CHECKED;
     next.highlightSource = IsDlgButtonChecked(window, IDC_HIGHLIGHT_SOURCE) == BST_CHECKED;
+    next.lowercaseExtensions = IsDlgButtonChecked(window, IDC_LOWERCASE_EXTENSIONS) == BST_CHECKED;
     next.tabNameLength = length;
     next.titleNameLength = titleLength;
     next.multipleInstances = IsDlgButtonChecked(window, ID_MULTIPLE_INSTANCES) == BST_CHECKED;
@@ -735,6 +744,8 @@ INT_PTR CALLBACK PreferencesForm::DialogProc(HWND window, UINT message, WPARAM w
             form->settings->highlightMessage ? BST_CHECKED : BST_UNCHECKED);
         CheckDlgButton(window, IDC_HIGHLIGHT_SOURCE,
             form->settings->highlightSource ? BST_CHECKED : BST_UNCHECKED);
+        UINT extensionCheck = form->settings->lowercaseExtensions ? BST_CHECKED : BST_UNCHECKED;
+        CheckDlgButton(window, IDC_LOWERCASE_EXTENSIONS, extensionCheck);
         if (!InstallSelectionEditHandler(GetDlgItem(window, IDC_TAB_NAME_LENGTH))
                 || !InstallSelectionEditHandler(GetDlgItem(window, IDC_TITLE_NAME_LENGTH))) {
             EndDialog(window, -1);

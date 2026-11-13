@@ -140,11 +140,11 @@ static std::wstring LocalName(IXMLDOMNode* node) {
 
 /// Converts UTF-16 XML names to the UTF-8 keys used by field localization.
 static std::string Utf8(const std::wstring& text) {
-    int size = WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0,
-        nullptr, nullptr);
+    int size = WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()),
+        nullptr, 0, nullptr, nullptr);
     std::string result(size, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), size, nullptr,
-        nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()),
+        result.data(), size, nullptr, nullptr);
     return result;
 }
 
@@ -256,8 +256,8 @@ ZfoDocument ZfoDocument::Load(const std::filesystem::path& path) {
     CRYPT_DATA_BLOB encodedMessage{ static_cast<DWORD>(result.zfoBytes.size()), result.zfoBytes.data() };
     HCRYPTMSG rawMessage = nullptr;
     if (!CryptQueryObject(CERT_QUERY_OBJECT_BLOB, &encodedMessage, CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED,
-        CERT_QUERY_FORMAT_FLAG_BINARY | CERT_QUERY_FORMAT_FLAG_BASE64_ENCODED, 0, nullptr, nullptr,
-        nullptr, nullptr, &rawMessage, nullptr)) {
+            CERT_QUERY_FORMAT_FLAG_BINARY | CERT_QUERY_FORMAT_FLAG_BASE64_ENCODED, 0, nullptr, nullptr,
+            nullptr, nullptr, &rawMessage, nullptr)) {
         throw std::runtime_error("invalidZfo");
     }
     std::unique_ptr<void, decltype(&CryptMsgClose)> message(rawMessage, CryptMsgClose);
@@ -279,7 +279,7 @@ ZfoDocument ZfoDocument::Load(const std::filesystem::path& path) {
         PCCERT_CONTEXT certificate = nullptr;
         DWORD signerIndex = index;
         if (!CryptMsgGetAndVerifySigner(message.get(), 0, nullptr, CMSG_USE_SIGNER_INDEX_FLAG,
-            &certificate, &signerIndex)) {
+                &certificate, &signerIndex)) {
             result.signatureValid = false;
             continue;
         }
@@ -330,7 +330,7 @@ ZfoDocument ZfoDocument::Load(const std::filesystem::path& path) {
     _bstr_t namespaceName(namespaceText, false);
     std::wstring space = namespaceName.length() ? static_cast<const wchar_t*>(namespaceName) : L"";
     if (!space.starts_with(L"http://isds.czechpoint.cz/v20")
-        && !space.starts_with(L"http://isds.czechbox.cz/v20")) {
+            && !space.starts_with(L"http://isds.czechbox.cz/v20")) {
         throw std::runtime_error("invalidXml");
     }
     result.identifier = Value(root.Get(), L"dmID");
@@ -394,10 +394,20 @@ std::wstring ZfoDocument::SafeFileName(const std::wstring& name) {
     for (wchar_t& character : stem) {
         character = static_cast<wchar_t>(towupper(character));
     }
-    if (stem == L"CON" || stem == L"PRN" || stem == L"AUX" || stem == L"NUL"
-        || stem == L"CONIN$" || stem == L"CONOUT$"
-        || stem.size() == 4 && (stem.starts_with(L"COM") || stem.starts_with(L"LPT"))
-        && (stem[3] >= L'1' && stem[3] <= L'9' || stem[3] == L'¹' || stem[3] == L'²' || stem[3] == L'³')) {
+    const bool reservedName = stem == L"CON"
+        || stem == L"PRN"
+        || stem == L"AUX"
+        || stem == L"NUL"
+        || stem == L"CONIN$"
+        || stem == L"CONOUT$";
+    const bool numberedDevicePrefix = stem.size() == 4
+        && (stem.starts_with(L"COM") || stem.starts_with(L"LPT"));
+    const bool numberedDevice = numberedDevicePrefix
+        && (stem[3] >= L'1' && stem[3] <= L'9'
+            || stem[3] == L'¹'
+            || stem[3] == L'²'
+            || stem[3] == L'³');
+    if (reservedName || numberedDevice) {
         result.insert(result.begin(), L'_');
     }
     return result;
@@ -406,8 +416,11 @@ std::wstring ZfoDocument::SafeFileName(const std::wstring& name) {
 /// Writes decoded bytes unchanged and reports open, write or flush failures.
 void ZfoDocument::Save(const std::filesystem::path& path, const std::vector<std::uint8_t>& data) {
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
-    if (!output || !data.empty() && !output.write(reinterpret_cast<const char*>(data.data()), data.size())
-        || !output.flush()) {
+    const bool opened = static_cast<bool>(output);
+    const bool written = opened
+        && (data.empty() || output.write(reinterpret_cast<const char*>(data.data()), data.size()));
+    const bool flushed = written && static_cast<bool>(output.flush());
+    if (!flushed) {
         throw std::runtime_error("saveFailed");
     }
 }
@@ -446,7 +459,8 @@ std::vector<std::uint8_t> ZfoDocument::FormattedXml() const {
         if (type == XmlNodeType_Whitespace && !inlineParent) {
             continue;
         }
-        bool markup = type == XmlNodeType_Element || type == XmlNodeType_Comment
+        bool markup = type == XmlNodeType_Element
+            || type == XmlNodeType_Comment
             || type == XmlNodeType_ProcessingInstruction;
         bool blockEnd = type == XmlNodeType_EndElement && elements[parents.back()].hasMarkup;
         if (hasOutput && !inlineParent && (markup || blockEnd)) {

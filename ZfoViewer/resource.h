@@ -41,6 +41,7 @@
 #define IDC_HIGHLIGHT_MESSAGE                   1320
 #define IDC_HIGHLIGHT_SOURCE                    1321
 #define ID_MULTIPLE_INSTANCES                   1010
+#define IDC_LOWERCASE_EXTENSIONS                1322
 #define IDC_RECENT_LABEL                        1307
 #define IDC_RECENT_CLEAR                        1308
 #define IDC_PREFERENCES_APPLY                   1309
@@ -107,7 +108,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE                502
 #define _APS_NEXT_COMMAND_VALUE                 40308
-#define _APS_NEXT_CONTROL_VALUE                 1314
+#define _APS_NEXT_CONTROL_VALUE                 1323
 #define _APS_NEXT_SYMED_VALUE                   101
 #endif
 #endif

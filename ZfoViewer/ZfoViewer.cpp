@@ -87,6 +87,9 @@ static constexpr DWORD SmoothScrollingOption = 0x80;
 static constexpr DWORD DisableMessageColorsOption = 0x100;
 static constexpr DWORD DisableSourceColorsOption = 0x200;
 
+/// Preserves original extension case when set; absent settings keep lowercase extensions enabled.
+static constexpr DWORD PreserveExtensionCaseOption = 0x400;
+
 /// Registry namespace for application preferences, recent files and Help placement.
 static constexpr wchar_t SettingsKey[] = L"Software\\FortSoft\\ZfoViewer";
 
@@ -1307,6 +1310,7 @@ void LoadSettings(AppSettings& settings) {
     settings.smoothScrolling = (value & SmoothScrollingOption) != 0;
     settings.highlightMessage = (value & DisableMessageColorsOption) == 0;
     settings.highlightSource = (value & DisableSourceColorsOption) == 0;
+    settings.lowercaseExtensions = (value & PreserveExtensionCaseOption) == 0;
     ViewerFont* fonts[] = { &settings.messageFont, &settings.sourceFont };
     const wchar_t* fontNames[] = { L"MessageFont", L"SourceFont" };
     for (size_t index = 0; index < ARRAYSIZE(fonts); ++index) {
@@ -1361,12 +1365,16 @@ bool SaveSettings(const AppSettings& settings) {
         DWORD size = sizeof(options);
         RegGetValueW(key, nullptr, L"Options", RRF_RT_REG_DWORD, nullptr, &options, &size);
         options = options & ~(MultipleInstancesOption | CloseTabsOnDoubleClickOption
-                | SmoothScrollingOption | DisableMessageColorsOption | DisableSourceColorsOption)
+                | SmoothScrollingOption | DisableMessageColorsOption | DisableSourceColorsOption
+                | PreserveExtensionCaseOption)
             | (settings.multipleInstances ? MultipleInstancesOption : 0)
             | (settings.closeTabsOnDoubleClick ? CloseTabsOnDoubleClickOption : 0)
             | (settings.smoothScrolling ? SmoothScrollingOption : 0)
             | (settings.highlightMessage ? 0 : DisableMessageColorsOption)
             | (settings.highlightSource ? 0 : DisableSourceColorsOption);
+        if (!settings.lowercaseExtensions) {
+            options |= PreserveExtensionCaseOption;
+        }
         result = RegSetValueExW(key, L"Options", 0, REG_DWORD,
             reinterpret_cast<const BYTE*>(&options), sizeof(options));
         if (result == ERROR_SUCCESS) {

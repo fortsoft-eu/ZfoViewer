@@ -306,6 +306,9 @@ private:
     /// Displays a localized error, using the generic diagnostic when the translation key is unknown.
     void ReportError(const char* key) const;
 
+    /// Applies the filename-extension preference without changing the filename stem or parent directory.
+    void ApplyExtensionCase(std::filesystem::path& path) const;
+
     /// Shows the native Save As dialog and returns its selected path and optional export-format index.
     std::filesystem::path SaveDialog(const std::wstring& name, const wchar_t* extension,
         const COMDLG_FILTERSPEC* filters = nullptr, UINT count = 0, UINT* type = nullptr,
