@@ -332,7 +332,7 @@ struct ExportChoice {
     const wchar_t* extension;
 };
 
-/// Export filters in menu order: five text encodings, ODT, DOCX, RTF, HTML, XHTML, XML and six image formats.
+/// Export filters in menu order: five text encodings, RTF, ODT, DOCX, HTML, XHTML, XML and six image formats.
 extern const ExportChoice exportChoices[17];
 
 /// Captures native RichEdit rendering at its current layout and saves it with the shared image encoder.

@@ -105,16 +105,16 @@ static const TextId imageErrors[] = {
     TXT_WEBP_EXPORT_FAILED
 };
 
-/// Export filters in menu order: five text encodings, ODT, DOCX, RTF, HTML, XHTML, XML and six image formats.
+/// Export filters in menu order: five text encodings, RTF, ODT, DOCX, HTML, XHTML, XML and six image formats.
 const ExportChoice exportChoices[] = {
     { 1, TXT_TEXT_FORMAT, L"*.txt", L"txt" },
     { 2, TXT_TEXT_UTF8_FORMAT, L"*.txt", L"txt" },
     { 3, TXT_TEXT_UTF8_BOM_FORMAT, L"*.txt", L"txt" },
     { 4, TXT_TEXT_UTF16_BE_FORMAT, L"*.txt", L"txt" },
     { 5, TXT_TEXT_UTF16_LE_FORMAT, L"*.txt", L"txt" },
-    { 6, TXT_ODT_FORMAT, L"*.odt", L"odt" },
-    { 7, TXT_DOCX_FORMAT, L"*.docx", L"docx" },
-    { 8, TXT_RTF_FORMAT, L"*.rtf", L"rtf" },
+    { 6, TXT_RTF_FORMAT, L"*.rtf", L"rtf" },
+    { 7, TXT_ODT_FORMAT, L"*.odt", L"odt" },
+    { 8, TXT_DOCX_FORMAT, L"*.docx", L"docx" },
     { 9, TXT_HTML_FORMAT, L"*.html", L"html" },
     { 10, TXT_XHTML_FORMAT, L"*.xhtml", L"xhtml" },
     { 11, TXT_XML_FORMAT, L"*.xml", L"xml" },

@@ -1778,9 +1778,8 @@ std::vector<std::uint8_t> MessageView::FormatDocument(HWND edit, const ZfoDocume
         const std::wstring halfPoints = std::to_wstring((font.sizeTwips + 5) / 10);
         const std::wstring line = std::to_wstring(font.lineTwips);
         std::wstring styles = DocumentXmlHeader;
-        styles += L"<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\r\n"
-            L"  <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii=\"" + family + L"\" w:hAnsi=\""
-            + family;
+        styles += L"<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\r\n "
+            L" <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii=\"" + family + L"\" w:hAnsi=\"" + family;
         styles += L"\" w:eastAsia=\"" + family + L"\" w:cs=\"" + family + L"\"/>";
         styles += font.bold ? L"<w:b/>" : L"<w:b w:val=\"0\"/>";
         styles += font.italic ? L"<w:i/><w:iCs/>" : L"<w:i w:val=\"0\"/><w:iCs w:val=\"0\"/>";

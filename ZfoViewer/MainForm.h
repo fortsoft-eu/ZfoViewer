@@ -291,7 +291,7 @@ private:
     /// associated application.
     void OpenAttachment(int index = -1);
 
-    /// Exports the active report as text, Office documents, RTF, web markup, formatted XML or an image.
+    /// Exports the active report as text, RTF, Office documents, web markup, formatted XML or an image.
     void ExportReport();
 
     /// Toggles the current view's persisted highlighting preference while preserving selection and scroll.

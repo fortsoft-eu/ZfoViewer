@@ -813,7 +813,7 @@ void MainForm::OpenAttachment(int index) {
     }
 }
 
-/// Exports the active report as text, Office documents, RTF, web markup, formatted XML or an image.
+/// Exports the active report as text, RTF, Office documents, web markup, formatted XML or an image.
 void MainForm::ExportReport() {
     MessageTab* current = CurrentMessage();
     if (!current) {
@@ -853,16 +853,16 @@ void MainForm::ExportReport() {
         saved = text
             && SaveReportText(normalized.c_str(), path.c_str(), choice.type, error, ARRAYSIZE(error));
         HeapFree(GetProcessHeap(), 0, text);
-    } else if (choice.type == 6 || choice.type == 7) {
+    } else if (choice.type == 6) {
+        saved = SaveReportRtf(edit, path.c_str(), error, ARRAYSIZE(error));
+    } else if (choice.type == 7 || choice.type == 8) {
         const std::wstring* sourceText = current->sourceView ? &current->sourceText : nullptr;
         const std::wstring title = current->path.filename().wstring();
         const std::vector<std::uint8_t> bytes = MessageView::FormatDocument(edit,
-            current->document, sourceText, title, language, choice.type == 7,
+            current->document, sourceText, title, language, choice.type == 8,
             current->sourceView ? settings.highlightSource : settings.highlightMessage);
         ZfoDocument::Save(path, bytes);
         saved = true;
-    } else if (choice.type == 8) {
-        saved = SaveReportRtf(edit, path.c_str(), error, ARRAYSIZE(error));
     } else if (choice.type == 9 || choice.type == 10) {
         const std::wstring* sourceText = current->sourceView ? &current->sourceText : nullptr;
         const std::wstring title = current->path.filename().wstring();
