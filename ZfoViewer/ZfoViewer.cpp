@@ -850,7 +850,8 @@ static bool CapturePrintRun(ITextRange* range, UINT start, UINT end, PrintTextRu
 }
 
 /// Applies captured character formats to a complete modern layout or a page-relative text range.
-static HRESULT FormatPrintLayout(const PrintJob* job, IUnknown* text, IUnknown* drawing, UINT start, UINT length) {
+static HRESULT FormatPrintLayout(const PrintJob* job, IUnknown* text, IUnknown* drawing, UINT start,
+        UINT length) {
     Microsoft::WRL::ComPtr<IDWriteTextLayout> layout;
     Microsoft::WRL::ComPtr<ID2D1RenderTarget> target;
     HRESULT result = text->QueryInterface(IID_PPV_ARGS(&layout));
@@ -1796,7 +1797,9 @@ InstanceForwardResult SingleInstance::ForwardToExisting(const
         data.data()
     };
     DWORD_PTR accepted = 0;
-    if (SendMessageTimeoutW(target, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&request), SMTO_ABORTIFHUNG | SMTO_BLOCK, 10000, &accepted) && accepted) {
+    const LRESULT sent = SendMessageTimeoutW(target, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&request),
+        SMTO_ABORTIFHUNG | SMTO_BLOCK, 10000, &accepted);
+    if (sent && accepted) {
         return InstanceForwardResult::Forwarded;
     }
     return InstanceForwardResult::Failed;
@@ -2080,7 +2083,8 @@ bool SaveReportText(const wchar_t* report, const wchar_t* path, DWORD type, wcha
         }
     }
     if (!success) {
-        wcsncpy_s(error, errorCapacity, T(encodingError ? TXT_TEXT_ENCODING_FAILED : TXT_TEXT_EXPORT_FAILED), _TRUNCATE);
+        wcsncpy_s(error, errorCapacity, T(encodingError ? TXT_TEXT_ENCODING_FAILED : TXT_TEXT_EXPORT_FAILED),
+            _TRUNCATE);
     }
     return success;
 }

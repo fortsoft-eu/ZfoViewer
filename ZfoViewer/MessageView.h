@@ -77,8 +77,9 @@ public:
         const std::wstring& title, AppLanguage language, bool xhtml, bool highlight = true);
 
     /// Builds a standalone OpenDocument Text or Office Open XML package without an installed Office suite.
-    static std::vector<std::uint8_t> FormatDocument(HWND edit, const ZfoDocument& document, const std::wstring* source,
-        const std::wstring& title, AppLanguage language, bool docx, bool highlight = true);
+    static std::vector<std::uint8_t> FormatDocument(HWND edit, const ZfoDocument& document,
+            const std::wstring* source, const std::wstring& title, AppLanguage language, bool docx,
+            bool highlight = true);
 
     /// Returns the attachment or binary-data link covering the specified UTF-16 character position.
     const AttachmentLink* FindLink(LONG position) const;

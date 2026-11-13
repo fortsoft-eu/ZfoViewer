@@ -635,9 +635,27 @@ void MainForm::OpenDialog(bool folder) {
         IID_PPV_ARGS(&dialog)))) {
         throw std::runtime_error("unexpectedError");
     }
-    COMDLG_FILTERSPEC filter{ GetLocalizedText(language, TXT_ZFO_FORMAT), L"*.zfo" };
-    dialog->SetFileTypes(1, &filter);
-    dialog->SetOptions(FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST | FOS_ALLOWMULTISELECT);
+    if (folder) {
+        FILEOPENDIALOGOPTIONS options = 0;
+        HRESULT result = dialog->GetOptions(&options);
+        if (FAILED(result)) {
+            throw std::runtime_error("unexpectedError");
+        }
+        options |= FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR;
+        result = dialog->SetOptions(options);
+        if (FAILED(result)) {
+            throw std::runtime_error("unexpectedError");
+        }
+        result = dialog->SetTitle(GetLocalizedText(language, TXT_OPEN_FOLDER_TITLE));
+        if (FAILED(result)) {
+            throw std::runtime_error("unexpectedError");
+        }
+    } else {
+        COMDLG_FILTERSPEC filter{ GetLocalizedText(language, TXT_ZFO_FORMAT), L"*.zfo" };
+        dialog->SetFileTypes(1, &filter);
+        dialog->SetOptions(FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST
+            | FOS_ALLOWMULTISELECT);
+    }
     HRESULT result = dialog->Show(window);
     if (result == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
         return;

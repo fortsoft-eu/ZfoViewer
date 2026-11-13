@@ -1243,12 +1243,12 @@ static std::wstring OdtSourceStyles() {
             xml += L" fo:color=\"#" + ExportColor(style.color) + L"\"";
         }
         if (style.effects & CFE_BOLD) {
-            xml += L" fo:font-weight=\"bold\" style:font-weight-asian=\"bold\""
-                L" style:font-weight-complex=\"bold\"";
+            xml += L" fo:font-weight=\"bold\" style:font-weight-asian=\"bold\" "
+                L"style:font-weight-complex=\"bold\"";
         }
         if (style.effects & CFE_ITALIC) {
-            xml += L" fo:font-style=\"italic\" style:font-style-asian=\"italic\""
-                L" style:font-style-complex=\"italic\"";
+            xml += L" fo:font-style=\"italic\" style:font-style-asian=\"italic\" "
+                L"style:font-style-complex=\"italic\"";
         }
         xml += L"/></style:style>\r\n";
     }
@@ -1278,28 +1278,24 @@ static std::wstring OdtContent(const std::vector<ReportParagraph>& paragraphs, c
     const std::wstring line = ReportPoints(font.lineTwips);
     std::wstring xml = DocumentXmlHeader;
     xml += L"<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\"\r\n"
-        L"    xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\"\r\n"
-        L"    xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\"\r\n"
-        L"    xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\"\r\n"
-        L"    xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\""
-        L" office:version=\"1.2\">\r\n  <office:font-face-decls>\r\n"
-        L"    <style:font-face style:name=\"ReportFont\" svg:font-family=\"";
+        L"    xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\"\r\n    xmlns:style=\"urn:oasis:"
+        L"names:tc:opendocument:xmlns:style:1.0\"\r\n    xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:"
+        L"svg-compatible:1.0\"\r\n    xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1."
+        L"0\" office:version=\"1.2\">\r\n  <office:font-face-decls>\r\n    <style:font-face "
+        L"style:name=\"ReportFont\" svg:font-family=\"";
     xml += MarkupText(CssFontFamily(font.family)) + L"\"/>\r\n  </office:font-face-decls>\r\n";
-    xml += L"  <office:automatic-styles>\r\n"
-        L"    <style:style style:name=\"Body\" style:family=\"paragraph\">\r\n"
-        L"      <style:paragraph-properties fo:margin-top=\"0pt\" fo:margin-bottom=\"0pt\" fo:line-height=\"";
+    xml += L"  <office:automatic-styles>\r\n    <style:style style:name=\"Body\" style:family=\"paragraph\">"
+        L"\r\n      <style:paragraph-properties fo:margin-top=\"0pt\" fo:margin-bottom=\"0pt\" "
+        L"fo:line-height=\"";
     xml += line + L"\"/>\r\n" + OdtFontProperties(font, font.bold);
-    xml += L"    </style:style>\r\n"
-        L"    <style:style style:name=\"Heading\" style:family=\"paragraph\">\r\n"
+    xml += L"    </style:style>\r\n    <style:style style:name=\"Heading\" style:family=\"paragraph\">\r\n"
         L"      <style:paragraph-properties fo:margin-top=\"" + line + L"\" fo:margin-bottom=\"" + line;
     xml += L"\" fo:line-height=\"" + line + L"\" fo:keep-with-next=\"always\"/>\r\n";
     COLORREF headingColor = headingColors ? GetSysColor(COLOR_HOTLIGHT) : CLR_DEFAULT;
     xml += OdtFontProperties(font, true, headingColor);
-    xml += L"    </style:style>\r\n"
-        L"    <style:style style:name=\"Label\" style:family=\"text\">\r\n"
+    xml += L"    </style:style>\r\n    <style:style style:name=\"Label\" style:family=\"text\">\r\n"
         L"      <style:text-properties fo:font-weight=\"bold\" style:font-weight-asian=\"bold\" "
-        L"style:font-weight-complex=\"bold\"/>\r\n"
-        L"    </style:style>\r\n";
+        L"style:font-weight-complex=\"bold\"/>\r\n    </style:style>\r\n";
     for (const ReportParagraph& paragraph : paragraphs) {
         if (!paragraph.sourceStyles.empty()) {
             xml += OdtSourceStyles();
@@ -1684,13 +1680,12 @@ std::wstring MessageView::FormatHtml(HWND edit, const ZfoDocument& document, con
     const wchar_t* languageTag = DocumentLanguage(language);
     std::wstring html;
     if (xhtml) {
-        html = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-            L"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\r\n"
-            L"    \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\r\n"
-            L"<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"";
+        html = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML "
+            L"1.1//EN\"\r\n    \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\r\n<html xmlns=\"http://www."
+            L"w3.org/1999/xhtml\" xml:lang=\"";
     } else {
-        html = L"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\r\n"
-            L"    \"http://www.w3.org/TR/html4/strict.dtd\">\r\n<html lang=\"";
+        html = L"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\r\n    \"http://www.w3.org/TR/html4/"
+            L"strict.dtd\">\r\n<html lang=\"";
     }
     html += languageTag;
     html += L"\">\r\n<head>\r\n    <title>" + MarkupText(title) + L"</title>\r\n";
@@ -1720,11 +1715,10 @@ std::wstring MessageView::FormatHtml(HWND edit, const ZfoDocument& document, con
     if (!source && highlight) {
         html += L"        h2 { color: #" + ExportColor(GetSysColor(COLOR_HOTLIGHT)) + L"; }\r\n";
     }
-    html += L"        h2:first-child { margin-top: 0; }\r\n"
-        L"        p { margin: 0; }\r\n        .attachment { margin-top: " + line + L"; }\r\n";
-    html += L"        pre { font: inherit; margin: 0; }\r\n"
-        L"        .value, pre { white-space: pre-wrap; word-wrap: break-word; }\r\n"
-        L"    </style>\r\n</head>\r\n<body>\r\n";
+    html += L"        h2:first-child { margin-top: 0; }\r\n        p { margin: 0; }\r\n        .attachment { "
+        L"margin-top: " + line + L"; }\r\n";
+    html += L"        pre { font: inherit; margin: 0; }\r\n        .value, pre { white-space: pre-wrap; "
+        L"word-wrap: break-word; }\r\n    </style>\r\n</head>\r\n<body>\r\n";
     if (source) {
         html += L"    <pre>" + HtmlSource(*source, highlight) + L"</pre>\r\n";
     } else {
@@ -1760,30 +1754,25 @@ std::vector<std::uint8_t> MessageView::FormatDocument(HWND edit, const ZfoDocume
         contentTypes += L"<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\r\n"
             L"  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package."
             L"relationships+xml\"/>\r\n  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\r\n"
-            L"  <Override PartName=\"/word/document.xml\" "
-            L"ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml"
-            L".document.main+xml\"/>\r\n  <Override PartName=\"/word/styles.xml\" "
-            L"ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml\"/>\r\n"
-            L"  <Override PartName=\"/docProps/core.xml\" "
+            L"  <Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-"
+            L"officedocument.wordprocessingml.document.main+xml\"/>\r\n  <Override "
+            L"PartName=\"/word/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument."
+            L"wordprocessingml.styles+xml\"/>\r\n  <Override PartName=\"/docProps/core.xml\" "
             L"ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/>\r\n</Types>\r\n";
         AppendDocumentPart(parts, "[Content_Types].xml", contentTypes);
         std::wstring relationships = DocumentXmlHeader;
-        relationships +=
-            L"<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\r\n"
-            L"  <Relationship Id=\"document\" "
-            L"Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" "
-            L"Target=\"word/document.xml\"/>\r\n"
-            L"  <Relationship Id=\"metadata\" "
-            L"Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" "
-            L"Target=\"docProps/core.xml\"/>\r\n</Relationships>\r\n";
+        relationships += L"<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/"
+            L"relationships\">\r\n  <Relationship Id=\"document\" Type=\"http://schemas.openxmlformats.org/"
+            L"officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/>\r\n"
+            L"  <Relationship Id=\"metadata\" Type=\"http://schemas.openxmlformats.org/package/2006/"
+            L"relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/>\r\n"
+            L"</Relationships>\r\n";
         AppendDocumentPart(parts, "_rels/.rels", relationships);
         AppendDocumentPart(parts, "word/document.xml", DocxContent(paragraphs));
         relationships = DocumentXmlHeader;
-        relationships +=
-            L"<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\r\n"
-            L"  <Relationship Id=\"styles\" "
-            L"Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" "
-            L"Target=\"styles.xml\"/>\r\n</Relationships>\r\n";
+        relationships += L"<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/"
+            L"relationships\">\r\n  <Relationship Id=\"styles\" Type=\"http://schemas.openxmlformats.org/"
+            L"officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>\r\n</Relationships>\r\n";
         AppendDocumentPart(parts, "word/_rels/document.xml.rels", relationships);
         const std::wstring family = MarkupText(font.family);
         const std::wstring halfPoints = std::to_wstring((font.sizeTwips + 5) / 10);
@@ -1803,13 +1792,12 @@ std::vector<std::uint8_t> MessageView::FormatDocument(HWND edit, const ZfoDocume
         }
         styles += L"<w:sz w:val=\"" + halfPoints + L"\"/><w:szCs w:val=\"" + halfPoints + L"\"/>";
         styles += L"<w:lang w:val=\"" + languageTag + L"\"/></w:rPr></w:rPrDefault></w:docDefaults>\r\n"
-            L"  <w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\">\r\n"
-            L"    <w:name w:val=\"Normal\"/>\r\n"
-            L"    <w:pPr><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"" + line;
-        styles += L"\" w:lineRule=\"exact\"/></w:pPr>\r\n  </w:style>\r\n"
-            L"  <w:style w:type=\"paragraph\" w:styleId=\"Heading1\">\r\n"
-            L"    <w:name w:val=\"Heading 1\"/><w:basedOn w:val=\"Normal\"/><w:next w:val=\"Normal\"/>\r\n"
-            L"    <w:pPr><w:keepNext/><w:spacing w:before=\"" + line + L"\" w:after=\"" + line;
+            L"  <w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\">\r\n    <w:name "
+            L"w:val=\"Normal\"/>\r\n    <w:pPr><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"" + line;
+        styles += L"\" w:lineRule=\"exact\"/></w:pPr>\r\n  </w:style>\r\n  <w:style w:type=\"paragraph\" "
+            L"w:styleId=\"Heading1\">\r\n    <w:name w:val=\"Heading 1\"/><w:basedOn w:val=\"Normal\"/>"
+            L"<w:next w:val=\"Normal\"/>\r\n    <w:pPr><w:keepNext/><w:spacing "
+            L"w:before=\"" + line + L"\" w:after=\"" + line;
         styles += L"\"/><w:outlineLvl w:val=\"0\"/></w:pPr>\r\n    <w:rPr><w:b/><w:bCs/>";
         if (!source && highlight) {
             styles += L"<w:color w:val=\"" + ExportColor(GetSysColor(COLOR_HOTLIGHT)) + L"\"/>";
@@ -1817,9 +1805,8 @@ std::vector<std::uint8_t> MessageView::FormatDocument(HWND edit, const ZfoDocume
         styles += L"</w:rPr>\r\n  </w:style>\r\n</w:styles>\r\n";
         AppendDocumentPart(parts, "word/styles.xml", styles);
         std::wstring metadata = DocumentXmlHeader;
-        metadata += L"<cp:coreProperties "
-            L"xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\"\r\n"
-            L"    xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\r\n"
+        metadata += L"<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/"
+            L"core-properties\"\r\n    xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\r\n"
             L"  <dc:title>" + MarkupText(title) + L"</dc:title>\r\n";
         metadata += L"  <dc:language>" + languageTag + L"</dc:language>\r\n</cp:coreProperties>\r\n";
         AppendDocumentPart(parts, "docProps/core.xml", metadata);
@@ -1827,23 +1814,21 @@ std::vector<std::uint8_t> MessageView::FormatDocument(HWND edit, const ZfoDocume
         AppendDocumentPart(parts, "mimetype", L"application/vnd.oasis.opendocument.text");
         AppendDocumentPart(parts, "content.xml", OdtContent(paragraphs, font, !source && highlight));
         std::wstring manifest = DocumentXmlHeader;
-        manifest +=
-            L"<manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" "
-            L"manifest:version=\"1.2\">\r\n  <manifest:file-entry manifest:full-path=\"/\" manifest:"
-            L"media-type=\"application/vnd.oasis.opendocument.text\" manifest:version=\"1.2\"/>\r\n  "
-            L"<manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/>\r\n"
-            L"  <manifest:file-entry manifest:full-path=\"meta.xml\" manifest:media-type=\"text/xml\"/>\r\n"
-            L"</manifest:manifest>\r\n";
+        manifest += L"<manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1."
+            L"0\" manifest:version=\"1.2\">\r\n  <manifest:file-entry manifest:full-path=\"/\" "
+            L"manifest:media-type=\"application/vnd.oasis.opendocument.text\" manifest:version=\"1.2\"/>\r\n"
+            L"  <manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/>"
+            L"\r\n  <manifest:file-entry manifest:full-path=\"meta.xml\" manifest:media-type=\"text/xml\"/>"
+            L"\r\n</manifest:manifest>\r\n";
         AppendDocumentPart(parts, "META-INF/manifest.xml", manifest);
         std::wstring metadata = DocumentXmlHeader;
-        metadata +=
-            L"<office:document-meta xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\"\r\n"
-            L"    xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\"\r\n"
-            L"    xmlns:dc=\"http://purl.org/dc/elements/1.1/\" office:version=\"1.2\">\r\n"
-            L"  <office:meta><meta:generator>ZFO Viewer</meta:generator>\r\n"
+        metadata += L"<office:document-meta xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1."
+            L"0\"\r\n    xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\"\r\n"
+            L"    xmlns:dc=\"http://purl.org/dc/elements/1.1/\" office:version=\"1.2\">\r\n  <office:meta>"
+            L"<meta:generator>ZFO Viewer</meta:generator>\r\n"
             L"    <dc:title>" + MarkupText(title) + L"</dc:title>\r\n";
-        metadata += L"    <dc:language>" + languageTag + L"</dc:language>\r\n"
-            L"  </office:meta>\r\n</office:document-meta>\r\n";
+        metadata += L"    <dc:language>" + languageTag + L"</dc:language>\r\n  </office:meta>\r\n"
+            L"</office:document-meta>\r\n";
         AppendDocumentPart(parts, "meta.xml", metadata);
     }
     return DocumentPackage(parts);

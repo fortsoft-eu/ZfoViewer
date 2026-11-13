@@ -451,7 +451,7 @@ std::vector<std::uint8_t> ZfoDocument::FormattedXml() const {
         bool blockEnd = type == XmlNodeType_EndElement && elements[parents.back()].hasMarkup;
         if (hasOutput && !inlineParent && (markup || blockEnd)) {
             size_t depth = parents.size() - (type == XmlNodeType_EndElement ? 1 : 0);
-            std::wstring indentation = L"\r\n" + std::wstring(depth * 2, L' ');
+            std::wstring indentation = L"\r\n" + std::wstring(depth * 4, L' ');
             Check(writer->WriteWhitespace(indentation.c_str()), "saveFailed");
         }
         if (type == XmlNodeType_Text || type == XmlNodeType_Whitespace) {
@@ -476,6 +476,9 @@ std::vector<std::uint8_t> ZfoDocument::FormattedXml() const {
         }
         hasOutput = true;
         if (type == XmlNodeType_Element) {
+            if (inlineParent) {
+                elements[element].inlineContent = true;
+            }
             if (!reader->IsEmptyElement()) {
                 parents.push_back(element);
             }
