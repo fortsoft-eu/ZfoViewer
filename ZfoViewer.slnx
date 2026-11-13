@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Configurations>
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/ZfoViewer/">
+    <Project Path="ZfoViewer\ZfoViewer.vcxproj" Id="b4058baa-f84b-46ce-baba-66937ef1b314" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="PackageRelease.ps1" />
+  </Folder>
+</Solution>

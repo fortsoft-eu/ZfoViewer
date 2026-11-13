@@ -1,0 +1,229 @@
+// Microsoft Visual C++ generated resource script.
+//
+#pragma code_page(65001)
+
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_READONLY_SYMBOLS
+#include "winres.h"
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Czech (Czech Republic) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CSY)
+LANGUAGE LANG_CZECH, SUBLANG_DEFAULT
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ZFOVIEWER           ICON                    "Resources\\ZfoViewer.ico"
+IDI_FIND                ICON                    "Resources\\Find.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RCDATA
+//
+
+IDR_LICENSE             RCDATA                  "..\\license.txt"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATORS ACCELERATORS
+BEGIN
+    "E", ID_FILE_EXPORT, VIRTKEY, CONTROL
+    "O", ID_FILE_OPEN, VIRTKEY, CONTROL
+    "G", ID_FILE_PREFERENCES, VIRTKEY, CONTROL
+    "U", ID_VIEW_SOURCE, VIRTKEY, CONTROL
+    "W", ID_FILE_CLOSE, VIRTKEY, CONTROL
+    "S", ID_ATTACHMENT_SAVE, VIRTKEY, CONTROL
+    "F", ID_EDIT_FIND, VIRTKEY, CONTROL
+    "P", ID_FILE_PRINT, VIRTKEY, CONTROL
+    VK_F3, ID_EDIT_FIND_NEXT, VIRTKEY
+    "C", ID_EDIT_COPY, VIRTKEY, CONTROL
+    VK_F1, ID_HELP_CONTENTS, VIRTKEY
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUT DIALOGEX 0, 0, 310, 265
+STYLE DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+BEGIN
+    ICON            "",ID_INFO_ICON,8,8,20,20,SS_NOTIFY
+    CONTROL         "",ID_INFO_PRODUCT,"Static",SS_OWNERDRAW | SS_NOPREFIX | SS_NOTIFY,33,4,269,70
+    LTEXT           "",ID_INFO_WEBSITE,33,78,40,12,SS_NOPREFIX | SS_NOTIFY
+    CONTROL         "",ID_INFO_LINK,"SysLink",WS_CLIPSIBLINGS | WS_TABSTOP,77,78,225,12
+    EDITTEXT        ID_INFO_TEXT,8,96,294,143,ES_MULTILINE | ES_AUTOVSCROLL | ES_NOHIDESEL | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | WS_VSCROLL | WS_HSCROLL,WS_EX_CLIENTEDGE
+    DEFPUSHBUTTON   "",ID_INFO_CLOSE,259,245,43,12
+END
+
+IDD_HELP DIALOGEX 0, 0, 310, 246
+STYLE WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_APPWINDOW
+BEGIN
+    EDITTEXT        ID_INFO_TEXT,8,8,294,212,ES_MULTILINE | ES_AUTOVSCROLL | ES_NOHIDESEL | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_CLIENTEDGE
+    DEFPUSHBUTTON   "",ID_INFO_CLOSE,259,226,43,12
+    SCROLLBAR       ID_INFO_SIZE_GRIP,300,236,10,10,SBS_SIZEBOXBOTTOMRIGHTALIGN | SBS_SIZEGRIP | WS_CLIPSIBLINGS
+END
+
+IDD_FIND DIALOGEX 0, 0, 242, 65
+STYLE DS_CENTER | WS_MINIMIZEBOX | WS_POPUP | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_APPWINDOW
+BEGIN
+    CONTROL         "",IDC_FIND_LABEL,"Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_CLIPSIBLINGS,8,8,39,14
+    COMBOBOX        IDC_FIND_TEXT,51,8,134,150,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_FIND_MATCH_CASE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,26,81,11
+    CONTROL         "",IDC_FIND_BACKWARD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,37,81,11
+    CONTROL         "",IDC_FIND_TOPMOST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,48,81,11
+    CONTROL         "",IDC_FIND_STARTS_WITH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,93,26,92,11
+    CONTROL         "",IDC_FIND_ENDS_WITH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,93,37,92,11
+    CONTROL         "",IDC_FIND_REGEX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,93,48,92,11
+    DEFPUSHBUTTON   "",IDOK,191,8,43,12
+    PUSHBUTTON      "",IDCANCEL,191,45,43,12
+    SCROLLBAR       IDC_FIND_GRIP,232,55,10,10,SBS_SIZEBOXBOTTOMRIGHTALIGN | SBS_SIZEGRIP | WS_CLIPSIBLINGS
+END
+
+IDD_PREFERENCES DIALOGEX 0, 0, 350, 166
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE 0x02000000
+BEGIN
+    CONTROL         "",IDC_MESSAGE_FONT_LABEL,"Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_CLIPSIBLINGS,8,8,334,14
+    PUSHBUTTON      "",IDC_MESSAGE_FONT_CHOOSE,90,8,203,12
+    PUSHBUTTON      "",IDC_MESSAGE_FONT_DEFAULT,299,8,43,12
+    CONTROL         "",IDC_SOURCE_FONT_LABEL,"Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_CLIPSIBLINGS,8,26,334,14
+    PUSHBUTTON      "",IDC_SOURCE_FONT_CHOOSE,90,26,203,12
+    PUSHBUTTON      "",IDC_SOURCE_FONT_DEFAULT,299,26,43,12
+    CONTROL         "",IDC_PREFERENCES_LANGUAGE_LABEL,"Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_CLIPSIBLINGS,
+8,46,334,14
+    COMBOBOX        IDC_PREFERENCES_LANGUAGE,90,46,203,76,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_TAB_NAME_LABEL,"Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_CLIPSIBLINGS,8,66,334,14
+    EDITTEXT        IDC_TAB_NAME_LENGTH,90,66,43,14,ES_NUMBER | ES_AUTOHSCROLL
+    CONTROL         "",IDC_TAB_NAME_SPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,123,66,10,14
+    CONTROL         "",IDC_TITLE_NAME_LABEL,"Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_CLIPSIBLINGS,178,66,115,14
+    EDITTEXT        IDC_TITLE_NAME_LENGTH,299,66,43,14,ES_NUMBER | ES_AUTOHSCROLL
+    CONTROL         "",IDC_TITLE_NAME_SPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,332,66,10,14
+    CONTROL         "",IDC_SMOOTH_SCROLLING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,84,170,14
+    CONTROL         "",IDC_HIGHLIGHT_MESSAGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,84,164,14
+    CONTROL         "",IDC_CLOSE_TABS_ON_DOUBLE_CLICK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,102,170,14
+    CONTROL         "",IDC_HIGHLIGHT_SOURCE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,178,102,164,14
+    CONTROL         "",ID_MULTIPLE_INSTANCES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,120,170,14
+    CONTROL         "",IDC_RECENT_LABEL,"Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_CLIPSIBLINGS,178,120,115,14
+    PUSHBUTTON      "",IDC_RECENT_CLEAR,299,118,43,12
+    DEFPUSHBUTTON   "",IDOK,201,144,43,12
+    PUSHBUTTON      "",IDCANCEL,250,144,43,12
+    PUSHBUTTON      "",IDC_PREFERENCES_APPLY,299,144,43,12
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#define APSTUDIO_READONLY_SYMBOLS\r\n"
+    "#include ""winres.h""\r\n"
+    "#undef APSTUDIO_READONLY_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CSY)\r\n"
+    "LANGUAGE LANG_CZECH, SUBLANG_DEFAULT\r\n"
+    "IDR_LIBRARY_WEBP RCDATA ""libwebp.packed""\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040504b0"
+        BEGIN
+            VALUE "CompanyName", "FortSoft"
+            VALUE "FileDescription", "Prohlížeč datových zpráv"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "ZfoViewer.exe"
+            VALUE "LegalCopyright", "Copyright © Petr Červinka — FortSoft 2026"
+            VALUE "OriginalFilename", "ZfoViewer.exe"
+            VALUE "ProductName", "ZfoViewer"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x405, 1200
+    END
+END
+
+#endif    // Czech (Czech Republic) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CSY)
+LANGUAGE LANG_CZECH, SUBLANG_DEFAULT
+IDR_LIBRARY_WEBP RCDATA "libwebp.packed"
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
