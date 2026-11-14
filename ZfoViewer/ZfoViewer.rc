@@ -195,7 +195,7 @@ BEGIN
         BLOCK "040504b0"
         BEGIN
             VALUE "CompanyName", "FortSoft"
-            VALUE "FileDescription", "Prohlížeč datových zpráv"
+            VALUE "FileDescription", "Nativní prohlížeč datových zpráv a doručenek ISDS."
             VALUE "FileVersion", "1.0.0.0"
             VALUE "InternalName", "ZfoViewer.exe"
             VALUE "LegalCopyright", "Copyright © Petr Červinka — FortSoft 2026"
