@@ -64,8 +64,9 @@ static HMENU CopyFileMenu(HMENU source) {
 }
 
 /// Initializes an empty recent-files list.
-RecentFiles::RecentFiles() : paths(static_cast<RecentPath*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY,
-    Capacity * sizeof(RecentPath)))), count(0) {}
+RecentFiles::RecentFiles()
+        : paths(static_cast<RecentPath*>(HeapAlloc(GetProcessHeap(),
+        HEAP_ZERO_MEMORY, Capacity * sizeof(RecentPath)))), count(0) {}
 
 /// Releases every stored recent-file path.
 RecentFiles::~RecentFiles() {

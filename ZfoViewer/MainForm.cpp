@@ -560,7 +560,12 @@ void MainForm::UpdateCommands() {
     bool highlighted = current && current->sourceView ? settings.highlightSource : settings.highlightMessage;
     CheckMenuItem(menu, ID_VIEW_HIGHLIGHT, MF_BYCOMMAND | (highlighted ? MF_CHECKED : MF_UNCHECKED));
     HWND editTarget = TextTarget();
-    EnableMenuItem(menu, ID_EDIT_COPY, MF_BYCOMMAND | (editTarget && !closing ? MF_ENABLED : MF_GRAYED));
+    DWORD start = 0;
+    DWORD end = 0;
+    if (editTarget && !closing) {
+        SendMessageW(editTarget, EM_GETSEL, reinterpret_cast<WPARAM>(&start), reinterpret_cast<LPARAM>(&end));
+    }
+    EnableMenuItem(menu, ID_EDIT_COPY, MF_BYCOMMAND | (start != end ? MF_ENABLED : MF_GRAYED));
     bool searchable = find.CanSearch();
     for (UINT id : FindCommands) {
         EnableMenuItem(menu, id, MF_BYCOMMAND | (searchable ? MF_ENABLED : MF_GRAYED));
@@ -901,7 +906,7 @@ void MainForm::CopySelection() {
     }
 }
 
-/// Routes shortcuts and modeless dialog navigation only to the applicable main, search or information window.
+/// Routes shortcuts, wheel input and modeless navigation to the applicable application window.
 bool MainForm::Translate(MSG& message) {
     UpdateFindTarget();
     HWND activeWindow = GetActiveWindow();
@@ -927,10 +932,6 @@ bool MainForm::Translate(MSG& message) {
             SendMessageW(window, WM_COMMAND, ID_HELP_CONTENTS, 0);
             return true;
         }
-        if (activeWindow == window && control && message.wParam == 'G') {
-            SendMessageW(window, WM_COMMAND, ID_FILE_PREFERENCES, 0);
-            return true;
-        }
         if (activeWindow == window && control && message.wParam == VK_TAB && !messages.empty()) {
             int count = static_cast<int>(messages.size());
             int direction = GetKeyState(VK_SHIFT) < 0 ? -1 : 1;
@@ -938,19 +939,24 @@ bool MainForm::Translate(MSG& message) {
             return true;
         }
     }
-    HWND search = find.GetWindow();
-    if (message.message == WM_KEYDOWN
-        && GetKeyState(VK_CONTROL) < 0
-        && search
-        && IsChild(search, message.hwnd)
-        && (message.wParam == 'A'
-            || message.wParam == 'C'
-            || message.wParam == 'V'
-            || message.wParam == 'X'
-            || message.wParam == 'Z')) {
-        TranslateMessage(&message);
-        DispatchMessageW(&message);
-        return true;
+    if (message.message == WM_MOUSEWHEEL) {
+        if (ScrollTabHeaders(window, tabs, message.wParam, message.lParam)) {
+            return true;
+        }
+        HWND edit = nullptr;
+        if (MessageTab* current = CurrentMessage()) {
+            edit = current->sourceView ? source : report.GetWindow();
+        }
+        if (edit
+                && message.hwnd != edit
+                && GetActiveWindow() == window
+                && IsWindowEnabled(window)) {
+            POINT point = POINT{ GET_X_LPARAM(message.lParam), GET_Y_LPARAM(message.lParam) };
+            if (WindowFromPoint(point) == edit) {
+                SendMessageW(edit, WM_MOUSEWHEEL, message.wParam, message.lParam);
+                return true;
+            }
+        }
     }
     if (find.Translate(&message)
             || help.GetWindow() && IsDialogMessageW(help.GetWindow(), &message)
@@ -1287,11 +1293,6 @@ LRESULT MainForm::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
         case tabCloseMessage:
             CloseTab(static_cast<int>(wParam));
             return 1;
-        case WM_MOUSEWHEEL:
-            if (ScrollTabHeaders(window, tabs, wParam, lParam)) {
-                return 0;
-            }
-            break;
         case WM_PAINT:
             Paint();
             return 0;

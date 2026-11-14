@@ -68,6 +68,20 @@ static const int preferencesLabelFields[][2] = {
     { IDC_TITLE_NAME_LABEL, IDC_TITLE_NAME_LENGTH }
 };
 
+/// Changes button availability only when needed and moves focus before disabling a focused button.
+static void EnablePreferencesControl(HWND window, int id, bool enabled) {
+    HWND control = GetDlgItem(window, id);
+    const bool wasEnabled = IsWindowEnabled(control) != FALSE;
+    if (wasEnabled == enabled) {
+        return;
+    }
+    if (!enabled && GetFocus() == control) {
+        HWND next = GetNextDlgTabItem(window, control, FALSE);
+        SendMessageW(window, WM_NEXTDLGCTL, reinterpret_cast<WPARAM>(next), TRUE);
+    }
+    EnableWindow(control, enabled);
+}
+
 /// Measures one Preferences label in its current font with native mnemonic processing.
 static LONG PreferenceLabelWidth(HWND window, int control) {
     HWND label = GetDlgItem(window, control);
@@ -546,7 +560,7 @@ void PreferencesForm::RefreshLanguage() {
         }
     }
     MainForm* form = reinterpret_cast<MainForm*>(GetWindowLongPtrW(owner, GWLP_USERDATA));
-    EnableWindow(GetDlgItem(window, IDC_RECENT_CLEAR), form && form->HasRecentFiles());
+    EnablePreferencesControl(window, IDC_RECENT_CLEAR, form && form->HasRecentFiles());
     if (font) {
         UpdateFontButtons();
         LayoutControls();
@@ -602,12 +616,7 @@ void PreferencesForm::UpdateFontButtons() const {
         if (GetControlText(choice) != caption) {
             SetWindowTextW(choice, caption.c_str());
         }
-        HWND button = GetDlgItem(window, reset[index]);
-        if (!custom && GetFocus() == button) {
-            HWND next = GetNextDlgTabItem(window, button, FALSE);
-            SendMessageW(window, WM_NEXTDLGCTL, reinterpret_cast<WPARAM>(next), TRUE);
-        }
-        EnableWindow(button, custom);
+        EnablePreferencesControl(window, reset[index], custom);
     }
 }
 
@@ -638,17 +647,14 @@ void PreferencesForm::ChooseViewerFont(bool xmlSource) {
     }
 }
 
-/// Enables Apply only when the current controls differ from the committed settings.
-void PreferencesForm::UpdateApply() {
-    if (updating) {
-        return;
-    }
+/// Compares pending controls and font choices with the last successfully applied preferences.
+bool PreferencesForm::PreferencesChanged() const {
     int selected = static_cast<int>(SendDlgItemMessageW(window,
         IDC_PREFERENCES_LANGUAGE, CB_GETCURSEL, 0, 0));
     UINT length = GetDlgItemInt(window, IDC_TAB_NAME_LENGTH, nullptr, FALSE);
     UINT titleLength = GetDlgItemInt(window, IDC_TITLE_NAME_LENGTH, nullptr, FALSE);
     const bool lowercase = IsDlgButtonChecked(window, IDC_LOWERCASE_EXTENSIONS) == BST_CHECKED;
-    bool changed = selected != GetApplicationLanguage()
+    return selected != GetApplicationLanguage()
         || length != settings->tabNameLength
         || titleLength != settings->titleNameLength
         || !EqualViewerFonts(messageFont, settings->messageFont)
@@ -660,7 +666,15 @@ void PreferencesForm::UpdateApply() {
         || IsDlgButtonChecked(window, IDC_CLOSE_TABS_ON_DOUBLE_CLICK) == BST_CHECKED
             != settings->closeTabsOnDoubleClick
         || IsDlgButtonChecked(window, IDC_SMOOTH_SCROLLING) == BST_CHECKED != settings->smoothScrolling;
-    EnableWindow(GetDlgItem(window, IDC_PREFERENCES_APPLY), changed);
+}
+
+/// Retains detected changes and enables Apply until successful explicit application.
+void PreferencesForm::UpdateApply() {
+    if (updating) {
+        return;
+    }
+    applyPending = applyPending || PreferencesChanged();
+    EnablePreferencesControl(window, IDC_PREFERENCES_APPLY, applyPending);
 }
 
 /// Validates caption limits, saves staged preferences and synchronously notifies the owner with the previous
@@ -678,6 +692,9 @@ bool PreferencesForm::Apply() {
         MessageBoxW(window, GetLocalizedText(language, "titleNameLengthInvalid"), PRODUCT_NAME, MB_ICONERROR);
         SetFocus(GetDlgItem(window, IDC_TITLE_NAME_LENGTH));
         return false;
+    }
+    if (!PreferencesChanged()) {
+        return true;
     }
     AppSettings next = *settings;
     next.language = static_cast<AppLanguage>(SendDlgItemMessageW(window, IDC_PREFERENCES_LANGUAGE,
@@ -721,6 +738,7 @@ INT_PTR CALLBACK PreferencesForm::DialogProc(HWND window, UINT message, WPARAM w
             buttonBounds.bottom - buttonBounds.top
         };
         form->updating = true;
+        form->applyPending = false;
         const int numbers[][2] = {
             { IDC_TAB_NAME_LENGTH, IDC_TAB_NAME_SPIN },
             { IDC_TITLE_NAME_LENGTH, IDC_TITLE_NAME_SPIN }
@@ -807,9 +825,15 @@ INT_PTR CALLBACK PreferencesForm::DialogProc(HWND window, UINT message, WPARAM w
     }
     if (message == WM_COMMAND) {
         UINT id = LOWORD(wParam);
+        UINT notification = HIWORD(wParam);
         if (id == IDOK || id == IDC_PREFERENCES_APPLY) {
-            if (form->Apply() && id == IDOK) {
-                EndDialog(window, IDOK);
+            if (form->Apply()) {
+                if (id == IDOK) {
+                    EndDialog(window, IDOK);
+                } else {
+                    form->applyPending = false;
+                    form->UpdateApply();
+                }
             }
         } else if (id == IDC_MESSAGE_FONT_CHOOSE || id == IDC_SOURCE_FONT_CHOOSE) {
             form->ChooseViewerFont(id == IDC_SOURCE_FONT_CHOOSE);
@@ -821,10 +845,12 @@ INT_PTR CALLBACK PreferencesForm::DialogProc(HWND window, UINT message, WPARAM w
             form->UpdateApply();
         } else if (id == IDC_RECENT_CLEAR) {
             SendMessageW(form->owner, WM_COMMAND, ID_CLEAR_RECENT_FILES, 0);
-            EnableWindow(GetDlgItem(window, IDC_RECENT_CLEAR), FALSE);
-        } else if (id == IDC_PREFERENCES_LANGUAGE && HIWORD(wParam) == CBN_DROPDOWN) {
+            EnablePreferencesControl(window, IDC_RECENT_CLEAR, false);
+        } else if (id == IDC_PREFERENCES_LANGUAGE && notification == CBN_DROPDOWN) {
             UpdateComboBoxDropDownSize(GetDlgItem(window, id));
-        } else {
+        } else if (notification == BN_CLICKED
+                || notification == EN_CHANGE
+                || notification == CBN_SELCHANGE) {
             form->UpdateApply();
         }
         return TRUE;

@@ -64,6 +64,9 @@ private:
     /// Suppresses change handling while controls are being populated or laid out.
     bool updating = false;
 
+    /// Retains detected changes until the user successfully applies the preferences.
+    bool applyPending = false;
+
     /// Applies the requested DPI-scaled width reduction once for the current window DPI.
     void ResizeWidth();
 
@@ -88,7 +91,10 @@ private:
     /// Opens the native font dialog for the selected report or source font.
     void ChooseViewerFont(bool xmlSource);
 
-    /// Enables Apply only when the current controls differ from the committed settings.
+    /// Compares pending controls and font choices with the last successfully applied preferences.
+    bool PreferencesChanged() const;
+
+    /// Retains detected changes and enables Apply until successful explicit application.
     void UpdateApply();
 
     /// Validates caption limits, saves staged preferences and synchronously notifies the owner with the
