@@ -105,6 +105,20 @@ static constexpr UINT PrintCommands[] = { ID_FILE_PRINT, ID_FILE_PAGE_SETUP };
 static constexpr UINT_PTR FileDropSubclassId = 1;
 static constexpr UINT PrintCompleteMessage = WM_APP + 21;
 
+/// Reveals the matching form beneath search without changing keyboard focus or topmost settings.
+static void RevealFindTarget(HWND target, HWND search) {
+    if (IsIconic(target)) {
+        ShowWindow(target, SW_SHOWNOACTIVATE);
+    }
+    SetWindowPos(search, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    HWND after = search;
+    if (GetWindowLongPtrW(search, GWL_EXSTYLE) & WS_EX_TOPMOST) {
+        after = HWND_TOP;
+    }
+    SetWindowPos(target, after, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+}
+
 /// Leaves the hidden reference dialog's initial placement to the native dialog manager.
 static INT_PTR CALLBACK InitialDialogPositionProc(HWND, UINT, WPARAM, LPARAM) {
     return FALSE;
@@ -958,10 +972,20 @@ bool MainForm::Translate(MSG& message) {
             }
         }
     }
-    if (find.Translate(&message)
-            || help.GetWindow() && IsDialogMessageW(help.GetWindow(), &message)
-            || about.GetWindow() && IsDialogMessageW(about.GetWindow(), &message)) {
+    HWND helpWindow = help.GetWindow();
+    HWND aboutWindow = about.GetWindow();
+    if (find.Translate(&message)) {
         return true;
+    }
+    if (helpWindow && (message.hwnd == helpWindow || IsChild(helpWindow, message.hwnd))) {
+        if (IsDialogMessageW(helpWindow, &message)) {
+            return true;
+        }
+    }
+    if (aboutWindow && (message.hwnd == aboutWindow || IsChild(aboutWindow, message.hwnd))) {
+        if (IsDialogMessageW(aboutWindow, &message)) {
+            return true;
+        }
     }
     if (message.hwnd != window && !IsChild(window, message.hwnd)) {
         return false;
@@ -1306,16 +1330,7 @@ LRESULT MainForm::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
             UpdateCommands();
             return 1;
         case findMatchMessage:
-            if (reinterpret_cast<HWND>(wParam) == help.GetWindow()) {
-                helpPlacement.SetVisible(reinterpret_cast<HWND>(lParam));
-            } else if (reinterpret_cast<HWND>(wParam) == about.GetWindow()) {
-                SetWindowPos(about.GetWindow(), HWND_TOP, 0, 0, 0, 0,
-                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                SetWindowPos(reinterpret_cast<HWND>(lParam), HWND_TOP, 0, 0, 0, 0,
-                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-            } else {
-                placement.SetVisible(reinterpret_cast<HWND>(lParam));
-            }
+            RevealFindTarget(reinterpret_cast<HWND>(wParam), reinterpret_cast<HWND>(lParam));
             return 0;
         case PrintCompleteMessage:
             CompletePrint(reinterpret_cast<PrintJob*>(lParam));

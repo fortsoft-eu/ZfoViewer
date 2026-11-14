@@ -179,8 +179,10 @@ constexpr std::initializer_list<LocalizedLanguage> languageDefinitions{
             L"HLEDÁNÍ\r\n"
             L"Úpravy > Najít (Ctrl+F) hledá ve zprávě, zdrojovém XML, nápovědě nebo licenci v okně O "
             L"programu. F3 najde další výskyt, Shift+F3 předchozí. Volby zahrnují rozlišování velikosti "
-            L"písmen, hledání zpět, hranice řádků a regulární výrazy ECMAScript s víceřádkovým "
-            L"hledáním.\r\n\r\n"
+            L"písmen, hledání pozpátku, celá slova, hranice řádků a regulární výrazy ECMAScript s "
+            L"víceřádkovým hledáním. Volba Pouze celá slova vyloučí shody uvnitř delších slov. Při zapnutém "
+            L"regulárním výrazu nejsou dostupné volby Pouze celá slova, Začátek řádku a Konec řádku. Výběr z "
+            L"historie obnoví i uložené volby hledání.\r\n\r\n"
             L"TISK\r\n"
             L"Soubor > Vzhled stránky mění okraje a nastavení tiskárny. Soubor > Tisk (Ctrl+P) tiskne text "
             L"aktivní zprávy, zdrojového XML, nápovědy nebo okna O programu. Okno O programu tiskne licenci. "
@@ -209,18 +211,18 @@ constexpr std::initializer_list<LocalizedLanguage> languageDefinitions{
         LocalizedText{ TXT_CLOSE, L"&Zavřít" },
         LocalizedText{ TXT_COPY_INFORMATION, L"Kopírovat informace" },
         LocalizedText{ TXT_COPY_URL, L"Kopírovat odkaz" },
-        LocalizedText{ TXT_FIND_BACKWARD, L"Hledat zpět" },
-        LocalizedText{ TXT_FIND_ENDS_WITH, L"Konec řádku" },
+        LocalizedText{ TXT_FIND_BACKWARD, L"Hledat &pozpátku" },
+        LocalizedText{ TXT_FIND_ENDS_WITH, L"K&onec řádku" },
         LocalizedText{ TXT_FIND_FAILED, L"Hledání se nepodařilo dokončit." },
-        LocalizedText{ TXT_FIND_MATCH_CASE, L"Rozlišovat velikost písmen" },
-        LocalizedText{ TXT_FIND_NEXT, L"Najít další" },
+        LocalizedText{ TXT_FIND_MATCH_CASE, L"Rozlišovat &velikost písmen" },
+        LocalizedText{ TXT_FIND_NEXT, L"Najít &další" },
         LocalizedText{ TXT_FIND_NOT_FOUND, L"Nebyla nalezena žádná shoda." },
-        LocalizedText{ TXT_FIND_REGEX, L"Regulární výraz" },
+        LocalizedText{ TXT_FIND_REGEX, L"&Regulární výraz" },
         LocalizedText{ TXT_FIND_REGEX_ERROR, L"Regulární výraz: %s" },
-        LocalizedText{ TXT_FIND_STARTS_WITH, L"Začátek řádku" },
-        LocalizedText{ TXT_FIND_TITLE, L"ZFO Viewer — Hledání" },
-        LocalizedText{ TXT_FIND_TOPMOST, L"Vždy navrchu" },
-        LocalizedText{ TXT_FIND_WHAT, L"Hledat:" },
+        LocalizedText{ TXT_FIND_STARTS_WITH, L"Začáte&k řádku" },
+        LocalizedText{ TXT_FIND_TITLE, L"%s — Najít" },
+        LocalizedText{ TXT_FIND_WHOLE_WORDS, L"Pouze &celá slova" },
+        LocalizedText{ TXT_FIND_WHAT, L"&Najít:" },
         LocalizedText{ TXT_HELP_TITLE, L"ZFO Viewer — Nápověda" },
         LocalizedText{ TXT_PAGE_SETUP_FAILED, L"Nelze otevřít dialog Vzhled stránky." },
         LocalizedText{ TXT_PLATFORM, L"Platforma:" },
@@ -604,8 +606,10 @@ constexpr std::initializer_list<LocalizedLanguage> languageDefinitions{
             L"HĽADANIE\r\n"
             L"Úpravy > Hľadať (Ctrl+F) hľadá v správe, zdrojovom XML, pomocníkovi alebo licencii v okne O "
             L"programe. F3 nájde ďalší výskyt, Shift+F3 predchádzajúci. Voľby zahŕňajú rozlišovanie veľkosti "
-            L"písmen, hľadanie späť, hranice riadkov a regulárne výrazy ECMAScript s viacriadkovým "
-            L"hľadaním.\r\n\r\n"
+            L"písmen, hľadanie dozadu, celé slová, hranice riadkov a regulárne výrazy ECMAScript s "
+            L"viacriadkovým hľadaním. Voľba Iba celé slová vylúči zhody vo vnútri dlhších slov. Pri zapnutom "
+            L"regulárnom výraze nie sú dostupné voľby Iba celé slová, Začiatok riadka a Koniec riadka. Výber "
+            L"z histórie obnoví aj uložené voľby hľadania.\r\n\r\n"
             L"TLAČ\r\n"
             L"Súbor > Vzhľad strany mení okraje a nastavenia tlačiarne. Súbor > Tlačiť (Ctrl+P) tlačí text "
             L"aktívnej správy, zdrojového XML, pomocníka alebo okna O programe. Okno O programe tlačí "
@@ -634,18 +638,18 @@ constexpr std::initializer_list<LocalizedLanguage> languageDefinitions{
         LocalizedText{ TXT_CLOSE, L"&Zavrieť" },
         LocalizedText{ TXT_COPY_INFORMATION, L"Kopírovať informácie" },
         LocalizedText{ TXT_COPY_URL, L"Kopírovať odkaz" },
-        LocalizedText{ TXT_FIND_BACKWARD, L"Hľadať späť" },
-        LocalizedText{ TXT_FIND_ENDS_WITH, L"Koniec riadka" },
+        LocalizedText{ TXT_FIND_BACKWARD, L"Hľadať &dozadu" },
+        LocalizedText{ TXT_FIND_ENDS_WITH, L"K&oniec riadka" },
         LocalizedText{ TXT_FIND_FAILED, L"Hľadanie sa nepodarilo dokončiť." },
-        LocalizedText{ TXT_FIND_MATCH_CASE, L"Rozlišovať veľkosť písmen" },
-        LocalizedText{ TXT_FIND_NEXT, L"Nájsť ďalší" },
+        LocalizedText{ TXT_FIND_MATCH_CASE, L"Rozlišovať &veľkosť písmen" },
+        LocalizedText{ TXT_FIND_NEXT, L"Hľadať ď&alej" },
         LocalizedText{ TXT_FIND_NOT_FOUND, L"Nebola nájdená žiadna zhoda." },
-        LocalizedText{ TXT_FIND_REGEX, L"Regulárny výraz" },
+        LocalizedText{ TXT_FIND_REGEX, L"&Regulárny výraz" },
         LocalizedText{ TXT_FIND_REGEX_ERROR, L"Regulárny výraz: %s" },
-        LocalizedText{ TXT_FIND_STARTS_WITH, L"Začiatok riadka" },
-        LocalizedText{ TXT_FIND_TITLE, L"ZFO Viewer — Hľadanie" },
-        LocalizedText{ TXT_FIND_TOPMOST, L"Vždy navrchu" },
-        LocalizedText{ TXT_FIND_WHAT, L"Hľadať:" },
+        LocalizedText{ TXT_FIND_STARTS_WITH, L"Začiato&k riadka" },
+        LocalizedText{ TXT_FIND_TITLE, L"%s — Hľadať" },
+        LocalizedText{ TXT_FIND_WHOLE_WORDS, L"Iba &celé slová" },
+        LocalizedText{ TXT_FIND_WHAT, L"&Hľadať:" },
         LocalizedText{ TXT_HELP_TITLE, L"ZFO Viewer — Pomocník" },
         LocalizedText{ TXT_PAGE_SETUP_FAILED, L"Vzhľad strany sa nepodarilo otvoriť." },
         LocalizedText{ TXT_PLATFORM, L"Platforma:" },
@@ -1036,7 +1040,10 @@ constexpr std::initializer_list<LocalizedLanguage> languageDefinitions{
             L"FIND\r\n"
             L"Edit > Find (Ctrl+F) searches the message, XML source, Help, or the license in About. F3 finds "
             L"the next match; Shift+F3 finds the previous match. Options include case matching, backward "
-            L"searching, line boundaries, and ECMAScript regular expressions with multiline matching.\r\n\r\n"
+            L"searching, whole words, line boundaries, and ECMAScript regular expressions with multiline "
+            L"matching. Match whole word only excludes matches within longer words. When regular expressions "
+            L"are enabled, Match whole word only, Beginning of line, and End of line are unavailable. "
+            L"Selecting a previous search from history also restores its saved search options.\r\n\r\n"
             L"PRINT\r\n"
             L"File > Page Setup changes margins and printer settings. File > Print (Ctrl+P) prints text from "
             L"the active message, XML source, Help, or About. About prints its license text. Windows 11 uses "
@@ -1064,18 +1071,18 @@ constexpr std::initializer_list<LocalizedLanguage> languageDefinitions{
         LocalizedText{ TXT_CLOSE, L"&Close" },
         LocalizedText{ TXT_COPY_INFORMATION, L"Copy information" },
         LocalizedText{ TXT_COPY_URL, L"Copy link" },
-        LocalizedText{ TXT_FIND_BACKWARD, L"Search backward" },
-        LocalizedText{ TXT_FIND_ENDS_WITH, L"End of line" },
+        LocalizedText{ TXT_FIND_BACKWARD, L"Search &backward" },
+        LocalizedText{ TXT_FIND_ENDS_WITH, L"&End of line" },
         LocalizedText{ TXT_FIND_FAILED, L"The search could not be completed." },
-        LocalizedText{ TXT_FIND_MATCH_CASE, L"Match case" },
-        LocalizedText{ TXT_FIND_NEXT, L"Find Next" },
+        LocalizedText{ TXT_FIND_MATCH_CASE, L"Match c&ase" },
+        LocalizedText{ TXT_FIND_NEXT, L"Find &Next" },
         LocalizedText{ TXT_FIND_NOT_FOUND, L"No match was found." },
-        LocalizedText{ TXT_FIND_REGEX, L"Regular expression" },
+        LocalizedText{ TXT_FIND_REGEX, L"&Regular expression" },
         LocalizedText{ TXT_FIND_REGEX_ERROR, L"Regular expression: %s" },
-        LocalizedText{ TXT_FIND_STARTS_WITH, L"Beginning of line" },
-        LocalizedText{ TXT_FIND_TITLE, L"ZFO Viewer — Find" },
-        LocalizedText{ TXT_FIND_TOPMOST, L"Always on top" },
-        LocalizedText{ TXT_FIND_WHAT, L"Find:" },
+        LocalizedText{ TXT_FIND_STARTS_WITH, L"Be&ginning of line" },
+        LocalizedText{ TXT_FIND_TITLE, L"%s — Find" },
+        LocalizedText{ TXT_FIND_WHOLE_WORDS, L"Match &whole word only" },
+        LocalizedText{ TXT_FIND_WHAT, L"&Find what:" },
         LocalizedText{ TXT_HELP_TITLE, L"ZFO Viewer — Help" },
         LocalizedText{ TXT_PAGE_SETUP_FAILED, L"The Page Setup dialog could not be opened." },
         LocalizedText{ TXT_PLATFORM, L"Platform:" },
@@ -1553,7 +1560,7 @@ constexpr LocalizedTextKey localizedTextKeys[] = {
     LocalizedTextKey{ "findRegexError", TXT_FIND_REGEX_ERROR },
     LocalizedTextKey{ "findStartsWith", TXT_FIND_STARTS_WITH },
     LocalizedTextKey{ "findTitle", TXT_FIND_TITLE },
-    LocalizedTextKey{ "findTopmost", TXT_FIND_TOPMOST },
+    LocalizedTextKey{ "findWholeWords", TXT_FIND_WHOLE_WORDS },
     LocalizedTextKey{ "findWhat", TXT_FIND_WHAT },
     LocalizedTextKey{ "licenseUnavailable", TXT_ABOUT_LICENSE_UNAVAILABLE },
     LocalizedTextKey{ "openWebsite", TXT_OPEN_IN_BROWSER },

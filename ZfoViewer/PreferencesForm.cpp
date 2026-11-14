@@ -544,8 +544,12 @@ void PreferencesForm::LayoutControls() {
     OrderPreferencesLabels(window);
 }
 
-/// Updates localized controls and pending language selection without committing unsaved preferences.
+/// Updates localized controls and layout together without painting intermediate positions or sizes.
 void PreferencesForm::RefreshLanguage() {
+    bool redraw = IsWindowVisible(window) != FALSE;
+    if (redraw) {
+        SendMessageW(window, WM_SETREDRAW, FALSE, 0);
+    }
     updating = true;
     language = static_cast<AppLanguage>(GetApplicationLanguage());
     const wchar_t* title = GetLocalizedText(language, "preferencesTitle");
@@ -570,6 +574,10 @@ void PreferencesForm::RefreshLanguage() {
     }
     updating = false;
     UpdateApply();
+    if (redraw) {
+        SendMessageW(window, WM_SETREDRAW, TRUE, 0);
+        RedrawWindow(window, nullptr, nullptr, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+    }
 }
 
 /// Describes both pending fonts and enables Default only for explicit custom selections.

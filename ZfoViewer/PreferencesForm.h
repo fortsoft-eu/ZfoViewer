@@ -82,7 +82,7 @@ private:
     /// Arranges existing controls using their current fonts without assigning a new interface font.
     void LayoutControls();
 
-    /// Updates localized controls and pending language selection without committing unsaved preferences.
+    /// Updates localized controls and layout together without painting intermediate positions or sizes.
     void RefreshLanguage();
 
     /// Describes both pending fonts and enables Default only for explicit custom selections.

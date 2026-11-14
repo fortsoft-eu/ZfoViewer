@@ -37,6 +37,7 @@ static const DWORD findBackward = 0x02;
 static const DWORD findStartsWith = 0x04;
 static const DWORD findEndsWith = 0x08;
 static const DWORD findRegularExpression = 0x10;
+static const DWORD findWholeWords = 0x20;
 
 /// Measures one localized caption with its current native font and mnemonic processing.
 static LONG FindCaptionWidth(HWND control) {
@@ -57,14 +58,32 @@ static LONG FindCaptionWidth(HWND control) {
     return bounds.right - bounds.left;
 }
 
-/// Compares a complete literal query at a valid report position.
-static bool FindLiteralAt(const wchar_t* report, const wchar_t* query, int start, int length) {
+/// Classifies letters, digits, underscores and combining marks as parts of a Unicode word.
+static bool IsFindWordCharacter(wchar_t character) {
+    if (character == L'_' || IsCharAlphaNumericW(character)) {
+        return true;
+    }
+    WORD type = 0;
+    BOOL classified = GetStringTypeW(CT_CTYPE3, &character, 1, &type);
+    return classified && type & (C3_NONSPACING | C3_DIACRITIC | C3_VOWELMARK);
+}
+
+/// Accepts only a nonempty match delimited by the text edges or native nonword characters.
+static bool IsFindWholeWord(const wchar_t* report, int start, int length) {
+    return length > 0
+        && (!start || !IsFindWordCharacter(report[start - 1]))
+        && !IsFindWordCharacter(report[start + length]);
+}
+
+/// Compares a literal query and optionally requires complete native Unicode word boundaries.
+static bool FindLiteralAt(const wchar_t* report, const wchar_t* query, int start, int length,
+        bool wholeWords) {
     for (int index = 0; index < length; ++index) {
         if (report[start + index] != query[index]) {
             return false;
         }
     }
-    return true;
+    return !wholeWords || IsFindWholeWord(report, start, length);
 }
 
 /// Initializes forward literal searching and an empty thirty-item session history.
@@ -72,8 +91,8 @@ FindForm::FindForm()
         : window(nullptr), ownerWindow(nullptr), target(nullptr), lastTarget(nullptr), uiFont(nullptr),
         buttonSize(SIZE{}), templateDpi(96), minimumWidth(380), fixedHeight(0), query(nullptr), history(),
         matches(nullptr), historyCount(0), matchCount(0), matchCapacity(0), lastMatchStart(-1),
-        lastMatchLength(0), ownsUiFont(false), matchCase(false), backward(false), startsWith(false),
-        endsWith(false), regularExpression(false) {}
+        lastMatchLength(0), ownsUiFont(false), matchCase(false), backward(false), wholeWords(false),
+        startsWith(false), endsWith(false), regularExpression(false) {}
 
 /// Closes the form and releases its font, expression, history and match buffers.
 FindForm::~FindForm() {
@@ -137,7 +156,8 @@ void FindForm::Layout() {
     HWND next = GetDlgItem(window, IDOK);
     HWND close = GetDlgItem(window, IDCANCEL);
     UpdateComboBoxMetrics(combo);
-    SIZE margin = DialogUnits(uiFont, 8, 8);
+    SIZE margin = DialogUnits(uiFont, 7, 7);
+    LONG top = DialogUnits(uiFont, 0, 6).cy;
     SIZE gap = DialogUnits(uiFont, 4, 3);
     SIZE button = buttonSize;
     UINT dpi = WindowDpi(window);
@@ -145,19 +165,19 @@ void FindForm::Layout() {
     button.cy = MulDiv(button.cy, dpi, templateDpi);
     button.cx = PreferredButtonSize(next, button).cx;
     button.cx = PreferredButtonSize(close, button).cx;
-    LONG inputLeft = DialogUnits(uiFont, 51, 0).cx;
+    LONG inputLeft = DialogUnits(uiFont, 50, 0).cx;
     LONG labelWidth = FindCaptionWidth(label);
     if (margin.cx + labelWidth + gap.cx > inputLeft) {
         inputLeft = margin.cx + labelWidth + gap.cx;
     }
     LONG checkLeft = margin.cx;
-    LONG firstWidth = DialogUnits(uiFont, 93, 0).cx - checkLeft;
+    LONG firstWidth = DialogUnits(uiFont, 92, 0).cx - checkLeft;
     LONG secondWidth = 0;
-    LONG optionHeight = DialogUnits(uiFont, 0, 11).cy;
+    LONG optionHeight = DialogUnits(uiFont, 0, 9).cy;
     const int options[] = {
         IDC_FIND_MATCH_CASE,
         IDC_FIND_BACKWARD,
-        IDC_FIND_TOPMOST,
+        IDC_FIND_WHOLE_WORDS,
         IDC_FIND_STARTS_WITH,
         IDC_FIND_ENDS_WITH,
         IDC_FIND_REGEX
@@ -194,12 +214,12 @@ void FindForm::Layout() {
         width = minimumWidth;
     }
     LONG rightButton = width - frameWidth - margin.cx - button.cx;
-    PlaceControl(label, margin.cx, margin.cy, inputLeft - margin.cx - gap.cx, button.cy);
+    PlaceControl(label, margin.cx, top, inputLeft - margin.cx - gap.cx, button.cy);
     RECT comboBounds = ControlRect(combo, window);
-    PlaceControl(combo, inputLeft, margin.cy, rightButton - gap.cx - inputLeft,
+    PlaceControl(combo, inputLeft, top, rightButton - gap.cx - inputLeft,
         comboBounds.bottom - comboBounds.top);
     UpdateEditMetrics(::GetWindow(combo, GW_CHILD), combo);
-    PlaceControl(next, rightButton, margin.cy, button.cx, button.cy);
+    PlaceControl(next, rightButton, top, button.cx, button.cy);
     AlignControlBaseline(label, combo);
     AlignControlBaseline(next, combo);
     RECT textBounds = RECT{};
@@ -219,7 +239,7 @@ void FindForm::Layout() {
             controlWidth, optionHeight);
     }
     PlaceControl(close, rightButton, rowTop + 2 * step, button.cx, button.cy);
-    AlignControlBaseline(close, GetDlgItem(window, IDC_FIND_TOPMOST));
+    AlignControlBaseline(close, GetDlgItem(window, IDC_FIND_WHOLE_WORDS));
     RECT closeBounds = ControlRect(close, window);
     fixedHeight = closeBounds.bottom + margin.cy + frameHeight;
     if (width != bounds.right - bounds.left || fixedHeight != bounds.bottom - bounds.top) {
@@ -248,24 +268,27 @@ void FindForm::UpdateFindButton() const {
     EnableWindow(button, enabled);
 }
 
-/// Disables line-start and line-end options while regular-expression matching is selected.
+/// Disables literal-only word and line restrictions while regular-expression matching is selected.
 void FindForm::UpdateRegexOptions() const {
     bool regex = IsDlgButtonChecked(window, IDC_FIND_REGEX) == BST_CHECKED;
     if (regex) {
+        CheckDlgButton(window, IDC_FIND_WHOLE_WORDS, BST_UNCHECKED);
         CheckDlgButton(window, IDC_FIND_STARTS_WITH, BST_UNCHECKED);
         CheckDlgButton(window, IDC_FIND_ENDS_WITH, BST_UNCHECKED);
     }
+    EnableWindow(GetDlgItem(window, IDC_FIND_WHOLE_WORDS), !regex);
     EnableWindow(GetDlgItem(window, IDC_FIND_STARTS_WITH), !regex);
     EnableWindow(GetDlgItem(window, IDC_FIND_ENDS_WITH), !regex);
 }
 
-/// Returns the five matching options stored with a session history entry.
+/// Returns the six matching options stored with a session history entry.
 DWORD FindForm::Options() const {
     return (matchCase ? findMatchCase : 0)
         | (backward ? findBackward : 0)
         | (startsWith ? findStartsWith : 0)
         | (endsWith ? findEndsWith : 0)
-        | (regularExpression ? findRegularExpression : 0);
+        | (regularExpression ? findRegularExpression : 0)
+        | (wholeWords ? findWholeWords : 0);
 }
 
 /// Restores matching options when a search-history item is selected.
@@ -275,6 +298,7 @@ void FindForm::ApplyOptions(DWORD options) const {
     CheckDlgButton(window, IDC_FIND_STARTS_WITH, options & findStartsWith ? BST_CHECKED : BST_UNCHECKED);
     CheckDlgButton(window, IDC_FIND_ENDS_WITH, options & findEndsWith ? BST_CHECKED : BST_UNCHECKED);
     CheckDlgButton(window, IDC_FIND_REGEX, options & findRegularExpression ? BST_CHECKED : BST_UNCHECKED);
+    CheckDlgButton(window, IDC_FIND_WHOLE_WORDS, options & findWholeWords ? BST_CHECKED : BST_UNCHECKED);
     UpdateRegexOptions();
 }
 
@@ -287,6 +311,7 @@ bool FindForm::ReadOptions() {
     DWORD previousOptions = Options();
     matchCase = IsDlgButtonChecked(window, IDC_FIND_MATCH_CASE) == BST_CHECKED;
     backward = IsDlgButtonChecked(window, IDC_FIND_BACKWARD) == BST_CHECKED;
+    wholeWords = IsDlgButtonChecked(window, IDC_FIND_WHOLE_WORDS) == BST_CHECKED;
     startsWith = IsDlgButtonChecked(window, IDC_FIND_STARTS_WITH) == BST_CHECKED;
     endsWith = IsDlgButtonChecked(window, IDC_FIND_ENDS_WITH) == BST_CHECKED;
     regularExpression = IsDlgButtonChecked(window, IDC_FIND_REGEX) == BST_CHECKED;
@@ -396,7 +421,7 @@ bool FindForm::FindLiteral(wchar_t* report) {
             int suffix = last - length;
             bool prefix = startsWith
                 && length <= last - first
-                && FindLiteralAt(report, needle, first, length);
+                && FindLiteralAt(report, needle, first, length, wholeWords);
             if (prefix) {
                 success = AddMatch(first, length);
             }
@@ -404,7 +429,7 @@ bool FindForm::FindLiteral(wchar_t* report) {
                     && endsWith
                     && suffix >= first
                     && (!prefix || suffix != first)
-                    && FindLiteralAt(report, needle, suffix, length)) {
+                    && FindLiteralAt(report, needle, suffix, length, wholeWords)) {
                 success = AddMatch(suffix, length);
             }
             first = last;
@@ -416,7 +441,7 @@ bool FindForm::FindLiteral(wchar_t* report) {
         int last = reportLength - length;
         int position = 0;
         while (success && position <= last) {
-            if (FindLiteralAt(report, needle, position, length)) {
+            if (FindLiteralAt(report, needle, position, length, wholeWords)) {
                 success = AddMatch(position, length);
                 position += length;
             } else {
@@ -434,7 +459,7 @@ bool FindForm::FindRegex(const wchar_t* report) {
     if (!expression.Compile(query, matchCase)) {
         wchar_t message[512];
         wsprintfW(message, T(TXT_FIND_REGEX_ERROR), expression.GetError());
-        MessageBoxW(window ? window : ownerWindow, message, L"MediaInfo", MB_OK | MB_ICONERROR);
+        MessageBoxW(window ? window : ownerWindow, message, PRODUCT_NAME, MB_OK | MB_ICONERROR);
         return false;
     }
     int length = lstrlenW(report);
@@ -449,11 +474,11 @@ bool FindForm::FindRegex(const wchar_t* report) {
         if (result == RegexSearchResult::Error) {
             wchar_t message[512];
             wsprintfW(message, T(TXT_FIND_REGEX_ERROR), expression.GetError());
-            MessageBoxW(window ? window : ownerWindow, message, L"MediaInfo", MB_OK | MB_ICONERROR);
+            MessageBoxW(window ? window : ownerWindow, message, PRODUCT_NAME, MB_OK | MB_ICONERROR);
             return false;
         }
         if (!AddMatch(start, matched)) {
-            MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), L"MediaInfo",
+            MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), PRODUCT_NAME,
                 MB_OK | MB_ICONERROR);
             return false;
         }
@@ -527,7 +552,7 @@ void FindForm::FindNext(HWND owner, bool reverse) {
     }
     bool dialogSearch = window && GetActiveWindow() == window;
     if (dialogSearch && !ReadOptions()) {
-        MessageBoxW(window, T(TXT_FIND_FAILED), L"MediaInfo", MB_OK | MB_ICONERROR);
+        MessageBoxW(window, T(TXT_FIND_FAILED), PRODUCT_NAME, MB_OK | MB_ICONERROR);
         return;
     }
     if (!query || !query[0]) {
@@ -540,13 +565,13 @@ void FindForm::FindNext(HWND owner, bool reverse) {
         SendMessageW(input, EM_SETSEL, 0, -1);
     }
     if (dialogSearch && !RememberSearch()) {
-        MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), L"MediaInfo",
+        MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), PRODUCT_NAME,
             MB_OK | MB_ICONERROR);
         return;
     }
     wchar_t* report = CopyControlText(target);
     if (!report) {
-        MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), L"MediaInfo",
+        MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), PRODUCT_NAME,
             MB_OK | MB_ICONERROR);
         return;
     }
@@ -555,11 +580,11 @@ void FindForm::FindNext(HWND owner, bool reverse) {
     HeapFree(GetProcessHeap(), 0, report);
     if (!success) {
         if (!regularExpression) {
-            MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), L"MediaInfo",
+            MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_FAILED), PRODUCT_NAME,
                 MB_OK | MB_ICONERROR);
         }
     } else if (!matchCount) {
-        MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_NOT_FOUND), L"MediaInfo",
+        MessageBoxW(window ? window : ownerWindow, T(TXT_FIND_NOT_FOUND), PRODUCT_NAME,
             MB_OK | MB_ICONINFORMATION);
     } else {
         SelectMatch(reverse);
@@ -587,7 +612,6 @@ bool FindForm::Initialize() {
         int y = ownerBounds.top + (ownerBounds.bottom - ownerBounds.top - bounds.bottom + bounds.top) / 2;
         SetWindowPos(window, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
     }
-    placement.SetAllowSaveTopMost(true);
     placement.SetDetectionOptions(WindowDetectionOptions::NoDetection);
     placement.SetFixHeight(true);
     placement.SetUseWindowsDefaultSize(false);
@@ -595,8 +619,6 @@ bool FindForm::Initialize() {
     if (!placement.Attach(window, "FindWindow")) {
         return false;
     }
-    CheckDlgButton(window, IDC_FIND_TOPMOST,
-        GetWindowLongW(window, GWL_EXSTYLE) & WS_EX_TOPMOST ? BST_CHECKED : BST_UNCHECKED);
     Layout();
     UpdateFindButton();
     return true;
@@ -608,14 +630,14 @@ void FindForm::RefreshLanguage() {
         return;
     }
     wchar_t title[256];
-    wsprintfW(title, T(TXT_FIND_TITLE), L"MediaInfo");
+    wsprintfW(title, T(TXT_FIND_TITLE), PRODUCT_NAME);
     SetWindowTextW(window, title);
     SetDlgItemTextW(window, IDC_FIND_LABEL, T(TXT_FIND_WHAT));
     SetDlgItemTextW(window, IDOK, T(TXT_FIND_NEXT));
     SetDlgItemTextW(window, IDCANCEL, T(TXT_CLOSE));
     SetDlgItemTextW(window, IDC_FIND_MATCH_CASE, T(TXT_FIND_MATCH_CASE));
     SetDlgItemTextW(window, IDC_FIND_BACKWARD, T(TXT_FIND_BACKWARD));
-    SetDlgItemTextW(window, IDC_FIND_TOPMOST, T(TXT_FIND_TOPMOST));
+    SetDlgItemTextW(window, IDC_FIND_WHOLE_WORDS, T(TXT_FIND_WHOLE_WORDS));
     SetDlgItemTextW(window, IDC_FIND_STARTS_WITH, T(TXT_FIND_STARTS_WITH));
     SetDlgItemTextW(window, IDC_FIND_ENDS_WITH, T(TXT_FIND_ENDS_WITH));
     SetDlgItemTextW(window, IDC_FIND_REGEX, T(TXT_FIND_REGEX));
@@ -647,20 +669,20 @@ void FindForm::Show(HWND owner) {
         HINSTANCE instance = GetModuleHandleW(nullptr);
         DLGTEMPLATE* definition = LoadSystemDialogTemplate(instance, IDD_FIND, owner);
         if (!definition) {
-            MessageBoxW(owner, T(TXT_FIND_FAILED), L"MediaInfo", MB_OK | MB_ICONERROR);
+            MessageBoxW(owner, T(TXT_FIND_FAILED), PRODUCT_NAME, MB_OK | MB_ICONERROR);
             return;
         }
         HWND created = CreateDialogIndirectParamW(instance, definition, nullptr, DialogProc,
             reinterpret_cast<LPARAM>(this));
         HeapFree(GetProcessHeap(), 0, definition);
         if (!created || !window) {
-            MessageBoxW(owner, T(TXT_FIND_FAILED), L"MediaInfo", MB_OK | MB_ICONERROR);
+            MessageBoxW(owner, T(TXT_FIND_FAILED), PRODUCT_NAME, MB_OK | MB_ICONERROR);
             return;
         }
         if (!SendMessageW(ownerWindow, findVisibilityChangedMessage, 0, 0)) {
             Close();
             SendMessageW(ownerWindow, findVisibilityChangedMessage, 0, 0);
-            MessageBoxW(owner, T(TXT_FIND_FAILED), L"MediaInfo", MB_OK | MB_ICONERROR);
+            MessageBoxW(owner, T(TXT_FIND_FAILED), PRODUCT_NAME, MB_OK | MB_ICONERROR);
             return;
         }
         placement.Show();
@@ -683,19 +705,9 @@ void FindForm::Close() const {
 INT_PTR FindForm::HandleClose() const {
     Close();
     if (!SendMessageW(ownerWindow, findVisibilityChangedMessage, 0, 0)) {
-        MessageBoxW(ownerWindow, T(TXT_FIND_FAILED), L"MediaInfo", MB_OK | MB_ICONERROR);
+        MessageBoxW(ownerWindow, T(TXT_FIND_FAILED), PRODUCT_NAME, MB_OK | MB_ICONERROR);
     }
     return TRUE;
-}
-
-/// Applies the Always on Top checkbox immediately and preserves its native saved state.
-void FindForm::ChangeTopMost() const {
-    bool enabled = IsDlgButtonChecked(window, IDC_FIND_TOPMOST) == BST_CHECKED;
-    SetWindowPos(window, enabled ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
-        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    if (!enabled) {
-        SetWindowPos(window, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    }
 }
 
 /// Restores history options during navigation and selects the text after the choice is committed.
@@ -734,9 +746,6 @@ INT_PTR FindForm::HandleCommand(WPARAM wParam) {
             return TRUE;
         case IDC_FIND_REGEX:
             UpdateRegexOptions();
-            return TRUE;
-        case IDC_FIND_TOPMOST:
-            ChangeTopMost();
             return TRUE;
     }
     return FALSE;

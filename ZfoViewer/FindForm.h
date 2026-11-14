@@ -99,6 +99,7 @@ private:
     bool ownsUiFont;
     bool matchCase;
     bool backward;
+    bool wholeWords;
     bool startsWith;
     bool endsWith;
     bool regularExpression;
@@ -115,7 +116,7 @@ private:
     /// Enables Find Next only when a report and a nonempty search expression are available.
     void UpdateFindButton() const;
 
-    /// Disables line-start and line-end options while regular-expression matching is selected.
+    /// Disables literal-only word and line restrictions while regular expressions are selected.
     void UpdateRegexOptions() const;
 
     /// Copies pending search text and options, retaining the last query if allocation fails.
@@ -144,9 +145,6 @@ private:
 
     /// Selects the next or previous collected match, wrapping once at the ends of the report.
     void SelectMatch(bool reverse);
-
-    /// Applies the Always on Top checkbox immediately and preserves its native saved state.
-    void ChangeTopMost() const;
 
     /// Restores history options during navigation and selects the text after the choice is committed.
     void ChooseHistory(bool selectText) const;
