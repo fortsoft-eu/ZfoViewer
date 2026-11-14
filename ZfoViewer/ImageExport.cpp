@@ -48,7 +48,7 @@ using Microsoft::WRL::ComPtr;
 typedef SIZE_T(__cdecl* EncodeFunction)(const BYTE*, int, int, int, BYTE**);
 typedef void(__cdecl* FreeFunction)(void*);
 
-/// Maps an exact RGB color to the first GIF palette index, matching the common image writer.
+/// Maps one exact RGB color to its GIF palette index.
 struct GifColor {
     DWORD color;
     BYTE index;

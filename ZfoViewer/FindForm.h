@@ -31,7 +31,7 @@
 #include <string>
 #include "PersistWindowState.h"
 
-/// Stores one session-only search expression together with its five matching options.
+/// Stores one session-only search expression together with its six matching options.
 struct FindHistoryEntry {
     wchar_t* text;
     DWORD options;
@@ -116,13 +116,13 @@ private:
     /// Enables Find Next only when a report and a nonempty search expression are available.
     void UpdateFindButton() const;
 
-    /// Disables literal-only word and line restrictions while regular expressions are selected.
+    /// Disables whole-word and line-edge options while regular expressions are selected.
     void UpdateRegexOptions() const;
 
     /// Copies pending search text and options, retaining the last query if allocation fails.
     bool ReadOptions();
 
-    /// Returns the five matching options stored with a session history entry.
+    /// Returns the six matching options stored with a session history entry.
     DWORD Options() const;
 
     /// Restores matching options when a search-history item is selected.

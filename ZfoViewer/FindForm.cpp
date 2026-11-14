@@ -268,7 +268,7 @@ void FindForm::UpdateFindButton() const {
     EnableWindow(button, enabled);
 }
 
-/// Disables literal-only word and line restrictions while regular-expression matching is selected.
+/// Disables whole-word and line-edge options while regular expressions are selected.
 void FindForm::UpdateRegexOptions() const {
     bool regex = IsDlgButtonChecked(window, IDC_FIND_REGEX) == BST_CHECKED;
     if (regex) {

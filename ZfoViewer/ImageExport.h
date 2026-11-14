@@ -45,8 +45,7 @@ public:
     /// Shows the native Save dialog with the exact image-format names used by MediaInfo.
     static HRESULT ChoosePath(HWND owner, const wchar_t* folder, wchar_t* path, SnapshotFormat& format);
 
-    /// Streams BGRA pixels through native codecs with an exact GIF palette and preserved destination.
-    /// A null destination runs the same encoder in memory.
+    /// Encodes a BGRA image, preserving the destination on failure and supporting memory-only checks.
     static bool Save(const wchar_t* path, SnapshotFormat format, unsigned width, unsigned height,
         unsigned stride, const BYTE* pixels);
 };
