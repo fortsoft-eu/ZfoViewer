@@ -55,9 +55,9 @@ component handles the standard edit controls in Help and About.
 3. UTF-8 text with BOM
 4. UTF-16 big-endian text
 5. UTF-16 little-endian text
-6. OpenDocument Text (ODT)
-7. Office Open XML WordprocessingML Document (DOCX)
-8. Rich Text Format (RTF)
+6. Rich Text Format (RTF)
+7. OpenDocument Text (ODT)
+8. Office Open XML WordprocessingML Document (DOCX)
 9. HyperText Markup Language 4.01 Strict (HTML)
 10. Extensible HyperText Markup Language 1.1 (XHTML)
 11. Formatted XML

@@ -432,7 +432,9 @@ void PreferencesForm::LayoutControls() {
     LONG labelWidth = std::max(recentWidth, PreferenceLabelWidth(window, IDC_TITLE_NAME_LABEL));
     LONG colorWidth = std::max(messageColorsSize.cx, sourceColorsSize.cx);
     colorWidth = std::max(colorWidth, lowercaseSize.cx);
-    LONG rightColumn = std::min(rightButton - gap.cx - labelWidth, right - colorWidth);
+    LONG rightColumn = rightButton - column + margin.cx;
+    rightColumn = std::min(rightColumn, rightButton - gap.cx - labelWidth);
+    rightColumn = std::min(rightColumn, right - colorWidth);
     PlaceControl(GetDlgItem(window, IDC_TITLE_NAME_LABEL), rightColumn, 0,
         rightButton - gap.cx - rightColumn, 1);
     SIZE closeSize = PreferredButtonSize(close, SIZE{ 0, button.cy });

@@ -48,7 +48,7 @@ Regulární výrazy používají ECMAScript ze staticky připojené běhové kni
 Výběr textu zajišťuje RichEdit; běžná textová pole nápovědy a okna O programu používají SelectionEdit.
 
 **Soubor > Exportovat** (`Ctrl+E`) nabízí v tomto pořadí ANSI, UTF-8, UTF-8 s BOM, UTF-16 BE,
-UTF-16 LE, ODT, DOCX, RTF, HTML 4.01 Strict, XHTML 1.1, odsazené XML, BMP, GIF, JPEG, PNG, TIFF a bezeztrátové WebP.
+UTF-16 LE, RTF, ODT, DOCX, HTML 4.01 Strict, XHTML 1.1, odsazené XML, BMP, GIF, JPEG, PNG, TIFF a bezeztrátové WebP.
 Textové kodéry vycházejí z ověřených vzorových implementací. Všech šest obrazových formátů používá stejnou
 komponentu ImageExport jako spořiče: nativní kodeky Windows pro BMP, GIF, JPEG, PNG a TIFF
 a přibalenou knihovnu WebP s komponentou PackedResource pro bezeztrátové WebP.
