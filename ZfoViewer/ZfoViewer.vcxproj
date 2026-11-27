@@ -100,7 +100,10 @@
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="FindForm.cpp" />
+    <ClCompile Include="FindForm.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="HelpForm.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
