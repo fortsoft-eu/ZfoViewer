@@ -48,6 +48,9 @@
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>APPLICATION_HEADER=&quot;ZfoViewer.h&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
@@ -94,13 +97,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AboutForm.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="FindForm.cpp" />
     <ClCompile Include="HelpForm.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE;APPLICATION_HEADER=&quot;ZfoViewer.h&quot;</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="ImageExport.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">WIN32;_WINDOWS;NDEBUG;UNICODE;_UNICODE</PreprocessorDefinitions>

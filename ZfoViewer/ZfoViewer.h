@@ -117,7 +117,6 @@ inline constexpr wchar_t WEBSITE_URL[] = L"https://fortsoft.eu/zfoviewer/";
 /// Subclass identifier for information-edit dialog navigation.
 inline constexpr UINT_PTR INFORMATION_TEXT_SUBCLASS_ID = 0xCC01;
 
-
 /// Loads saved language, caption limits, packed option bits and Help placement from the registry.
 void LoadSettings(AppSettings& settings);
 
@@ -219,9 +218,6 @@ PrintJob* ChooseReportPrinter(HWND owner, HWND edit, const wchar_t* title, Print
 /// Paginates and prints the captured text with its font and margins while honoring cancellation.
 bool PrintReportPages(PrintJob* job);
 
-/// Releases the printer context, captured text and process-heap storage owned by a print job.
-void FreePrintJob(PrintJob* job);
-
 /// Uses the application's product caption for diagnostics raised by shared components.
 int WINAPI ComponentMessageBoxW(HWND owner, LPCWSTR text, LPCWSTR title, UINT type);
 #ifndef MessageBoxW
@@ -248,7 +244,7 @@ SIZE InformationDialogUnits(HFONT font, int x, int y);
 
 /// Measures the common native Close button using its current font and existing dialog-unit minimum and
 /// padding.
-SIZE InformationButtonSize(HWND window, HFONT font);
+SIZE InformationButtonSize(HWND window, HFONT font, int resourceId);
 
 /// Measures a label's wrapped height at the requested width using its actual font, or returns zero if a DC is
 /// unavailable.
@@ -346,3 +342,12 @@ bool SaveReportRtf(HWND edit, const wchar_t* path, wchar_t* error, int capacity)
 
 /// Resolves a filesystem path to an absolute Windows path and reports path-resolution failures.
 std::filesystem::path AbsolutePath(const std::filesystem::path& path);
+
+std::wstring InformationHelpText(AppLanguage language, bool applicationMode);
+void SaveInformationWindowPositions(const AppSettings& settings);
+HICON LoadInformationFormIcon(HINSTANCE instance, int size);
+void ApplyInformationFormIcons(HWND window, HINSTANCE instance, int iconIndex = 0);
+
+bool TranslateModalInformationMessage(HWND owner, MSG& message);
+INT_PTR ShowModalInformationForm(HINSTANCE instance, const DLGTEMPLATE* definition, HWND owner,
+    DLGPROC procedure, LPARAM parameter);

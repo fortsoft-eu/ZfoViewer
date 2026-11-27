@@ -26,7 +26,8 @@
 
 #pragma once
 
-#include "ZfoViewer.h"
+#include <windows.h>
+#include "Localization.h"
 #include <regex>
 #include <string>
 #include "PersistWindowState.h"
@@ -84,8 +85,6 @@ private:
 
     HFONT uiFont;
     PersistWindowState placement;
-    SIZE buttonSize;
-    UINT templateDpi;
     LONG minimumWidth;
     LONG fixedHeight;
     wchar_t* query;
@@ -154,9 +153,6 @@ private:
 
     /// Handles combo notifications, search options, Find Next and Close commands.
     INT_PTR HandleCommand(WPARAM wParam);
-
-    /// Applies suggested DPI bounds and refreshes native fonts and geometry.
-    INT_PTR HandleDpiChange(LPARAM lParam);
 
     /// Supplies the measured minimum width while PersistWindowState fixes the form's height.
     INT_PTR HandleMinMax(LPARAM lParam) const;

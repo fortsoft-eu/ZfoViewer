@@ -29,7 +29,6 @@
 #define _WIN32_WINNT 0x0A00
 
 #include "ModernPrintDialog.h"
-#include "MainForm.h"
 #include <printmanagerinterop.h>
 #include <wincodec.h>
 #include <roapi.h>
@@ -47,6 +46,7 @@ typedef HRESULT(WINAPI* CreateD2DFactoryFunction)(D2D1_FACTORY_TYPE, REFIID,
 typedef HRESULT(WINAPI* CreateDWriteFactoryFunction)(DWRITE_FACTORY_TYPE, REFIID, IUnknown**);
 typedef LONG(WINAPI* GetVersionFunction)(OSVERSIONINFOW*);
 
+/// Maps a native printer paper identifier to the corresponding Windows print media size.
 struct PrintPaperMapping {
     SHORT paper;
     Printing::PrintMediaSize size;
@@ -252,9 +252,9 @@ bool UseModernPrintDialog() {
         && version.dwBuildNumber >= 22000;
 }
 
-/// Takes ownership of a snapshot and returns its print source, or null on allocation failure.
-ModernPrintDialog* CreateModernPrint(PrintJob* job, const PrintSettings& settings) {
-    return ModernPrintDialog::Create(job, settings);
+/// Adopts the snapshot and caller-selected completion message, or returns null on allocation failure.
+ModernPrintDialog* CreateModernPrint(PrintJob* job, const PrintSettings& settings, UINT completionMessage) {
+    return ModernPrintDialog::Create(job, settings, completionMessage);
 }
 
 /// Opens the system print UI while retaining the source through reentrant callbacks.
@@ -280,12 +280,25 @@ void ReleaseModernPrint(ModernPrintDialog* source) {
     source->Release();
 }
 
-/// Adopts the print snapshot and copies the initial printer settings.
-ModernPrintDialog::ModernPrintDialog(PrintJob* snapshot, const PrintSettings& settings)
-        : references(1), canceled(0), job(snapshot), deviceMode(DEVMODEW{}), pages(nullptr), pageCount(0),
-        content(D2D1_RECT_F{}), description(Printing::PrintPageDescription{}),
-        requestedToken(EventRegistrationToken{}), completedToken(EventRegistrationToken{}), requested(false),
-        completed(false), apartment(false), notified(false), failed(false) {
+/// Adopts the print snapshot and copies the initial printer settings and completion message.
+ModernPrintDialog::ModernPrintDialog(PrintJob* snapshot, const PrintSettings& settings,
+        UINT completionMessage)
+        : references(1),
+        canceled(0),
+        job(snapshot),
+        deviceMode(DEVMODEW{}),
+        pages(nullptr),
+        pageCount(0),
+        completeMessage(completionMessage),
+        content(D2D1_RECT_F{}),
+        description(Printing::PrintPageDescription{}),
+        requestedToken(EventRegistrationToken{}),
+        completedToken(EventRegistrationToken{}),
+        requested(false),
+        completed(false),
+        apartment(false),
+        notified(false),
+        failed(false) {
     InitializeCriticalSection(&lock);
     settings.GetDeviceMode(deviceMode);
 }
@@ -307,14 +320,15 @@ void ModernPrintDialog::operator delete(void* memory) {
     HeapFree(GetProcessHeap(), 0, memory);
 }
 
-/// Takes ownership of a snapshot and returns its print source, or null on allocation failure.
-ModernPrintDialog* ModernPrintDialog::Create(PrintJob* snapshot, const PrintSettings& settings) {
+/// Adopts the snapshot and caller-selected completion message, or returns null on allocation failure.
+ModernPrintDialog* ModernPrintDialog::Create(PrintJob* snapshot, const PrintSettings& settings,
+        UINT completionMessage) {
     void* memory = HeapAlloc(GetProcessHeap(), 0, sizeof(ModernPrintDialog));
     if (!memory) {
         FreePrintJob(snapshot);
         return nullptr;
     }
-    return new(memory) ModernPrintDialog(snapshot, settings);
+    return new(memory) ModernPrintDialog(snapshot, settings, completionMessage);
 }
 
 /// Exposes the document, preview, event callback and marshaling interfaces of this source.
@@ -496,7 +510,7 @@ void ModernPrintDialog::Complete(bool failure) {
     if (!notified && job->target) {
         notified = true;
         AddRef();
-        if (!PostMessageW(job->target, modernPrintCompleteMessage, 0, reinterpret_cast<LPARAM>(this))) {
+        if (!PostMessageW(job->target, completeMessage, 0, reinterpret_cast<LPARAM>(this))) {
             Release();
         }
     }

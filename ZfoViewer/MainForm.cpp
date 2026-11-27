@@ -104,6 +104,7 @@ static constexpr UINT PrintCommands[] = { ID_FILE_PRINT, ID_FILE_PAGE_SETUP };
 /// Identifiers for RichEdit subclassing and asynchronous print completion.
 static constexpr UINT_PTR FileDropSubclassId = 1;
 static constexpr UINT PrintCompleteMessage = WM_APP + 21;
+static const UINT modernPrintCompleteMessage = WM_APP + 9;
 
 /// Reveals the matching form beneath search without changing keyboard focus or topmost settings.
 static void RevealFindTarget(HWND target, HWND search) {
@@ -115,8 +116,7 @@ static void RevealFindTarget(HWND target, HWND search) {
     if (GetWindowLongPtrW(search, GWL_EXSTYLE) & WS_EX_TOPMOST) {
         after = HWND_TOP;
     }
-    SetWindowPos(target, after, 0, 0, 0, 0,
-        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    SetWindowPos(target, after, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
 /// Leaves the hidden reference dialog's initial placement to the native dialog manager.
@@ -130,9 +130,12 @@ static bool CanSelectAll(HWND control, bool rich) {
     DWORD end = 0;
     SendMessageW(control, EM_GETSEL, reinterpret_cast<WPARAM>(&start), reinterpret_cast<LPARAM>(&end));
     GETTEXTLENGTHEX request{ GTL_PRECISE | GTL_NUMCHARS, 1200 };
-    LRESULT length = rich
-        ? SendMessageW(control, EM_GETTEXTLENGTHEX, reinterpret_cast<WPARAM>(&request), 0)
-        : GetWindowTextLengthW(control);
+    LRESULT length;
+    if (rich) {
+        length = SendMessageW(control, EM_GETTEXTLENGTHEX, reinterpret_cast<WPARAM>(&request), 0);
+    } else {
+        length = GetWindowTextLengthW(control);
+    }
     return length > 0 && (start || end < static_cast<DWORD>(length));
 }
 
@@ -197,9 +200,11 @@ static std::filesystem::path DialogPath(IFileDialog* dialog) {
 
 /// Initializes the viewer's interface language and loads its recent-file history.
 MainForm::MainForm(AppSettings& preferences) : settings(preferences) {
-    language = settings.language < 0
-        ? ApplicationLanguageFromLangId(GetUserDefaultUILanguage())
-        : static_cast<AppLanguage>(settings.language);
+    if (settings.language < 0) {
+        language = ApplicationLanguageFromLangId(GetUserDefaultUILanguage());
+    } else {
+        language = static_cast<AppLanguage>(settings.language);
+    }
     SetApplicationLanguage(language);
     recentFiles.Load();
 }
@@ -990,6 +995,9 @@ bool MainForm::Translate(MSG& message) {
     if (message.hwnd != window && !IsChild(window, message.hwnd)) {
         return false;
     }
+    if (message.message == WM_KEYDOWN && message.wParam == VK_ESCAPE) {
+        return true;
+    }
     return TranslateAcceleratorW(window, accelerators, &message) || IsDialogMessageW(window, &message);
 }
 
@@ -1016,9 +1024,11 @@ LRESULT MainForm::HandleCommand(UINT command) {
     }
     if (command >= ID_LANGUAGE_FIRST && command < ID_LANGUAGE_FIRST + LANG_COUNT) {
         settings.language = static_cast<int>(command - ID_LANGUAGE_FIRST);
-        language = settings.language < 0
-            ? ApplicationLanguageFromLangId(GetUserDefaultUILanguage())
-            : static_cast<AppLanguage>(settings.language);
+        if (settings.language < 0) {
+            language = ApplicationLanguageFromLangId(GetUserDefaultUILanguage());
+        } else {
+            language = static_cast<AppLanguage>(settings.language);
+        }
         SetApplicationLanguage(language);
         if (!SaveSettings(settings)) {
             ReportError("settingsFailed");
@@ -1111,7 +1121,7 @@ LRESULT MainForm::HandleCommand(UINT command) {
             ShowAbout();
             break;
         case ID_HELP_CONTENTS:
-            help.Show(window, instance, settings, icons, helpPlacement, language, true);
+            help.Show(window, instance, settings, helpPlacement, language, true);
             UpdateFindTarget();
             break;
     }
@@ -1131,9 +1141,12 @@ LRESULT MainForm::HandleNotification(LPARAM lParam) {
         GetWindowRect(window, &bounds);
         RECT work = WindowWorkArea(bounds);
         SendMessageW(notification.hwndFrom, TTM_SETMAXTIPWIDTH, 0, work.right - work.left);
-        const wchar_t* text = notification.idFrom < messages.size()
-            ? messages[notification.idFrom].path.c_str()
-            : nullptr;
+        const wchar_t* text;
+        if (notification.idFrom < messages.size()) {
+            text = messages[notification.idFrom].path.c_str();
+        } else {
+            text = nullptr;
+        }
         reinterpret_cast<NMTTDISPINFOW*>(lParam)->lpszText = const_cast<wchar_t*>(text);
         return 0;
     }
@@ -1408,7 +1421,7 @@ void MainForm::ShowAbout() {
             state.y = bounds.top;
         }
     }
-    about.Show(window, instance, settings, icons, aboutPlacement, language);
+    about.Show(window, instance, settings, aboutPlacement, language, true);
     UpdateFindTarget();
 }
 
@@ -1468,8 +1481,6 @@ void MainForm::UpdateFindTarget() {
     find.SetTarget(target);
 }
 
-
-
 /// Opens native Page Setup for the active text view and reports configuration failures.
 void MainForm::PageSetup() {
     if (closing || printThread || modernPrint || printDialogOpen || !TextTarget()) {
@@ -1477,7 +1488,7 @@ void MainForm::PageSetup() {
     }
     wchar_t error[512]{};
     printDialogOpen = true;
-    printSettings.PageSetup(window, error, ARRAYSIZE(error));
+    printSettings.PageSetup(window, T(TXT_PAGE_SETUP_FAILED), error, ARRAYSIZE(error));
     printDialogOpen = false;
     if (*error) {
         MessageBoxW(window, error, L"ZFO Viewer", MB_ICONERROR);
@@ -1500,7 +1511,11 @@ void MainForm::PrintReport() {
     printOwner = owner;
     if (UseModernPrintDialog()) {
         PrintJob* snapshot = CapturePrintJob(window, edit, title, printSettings.GetMargins());
-        modernPrint = snapshot ? CreateModernPrint(snapshot, printSettings) : nullptr;
+        if (snapshot) {
+            modernPrint = CreateModernPrint(snapshot, printSettings, modernPrintCompleteMessage);
+        } else {
+            modernPrint = nullptr;
+        }
         HRESULT result = modernPrint ? ShowModernPrint(modernPrint, owner) : E_OUTOFMEMORY;
         if (FAILED(result)) {
             CloseModernPrint(modernPrint);

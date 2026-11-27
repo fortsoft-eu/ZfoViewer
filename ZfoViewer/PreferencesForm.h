@@ -51,12 +51,10 @@ private:
     ViewerFont messageFont;
     ViewerFont sourceFont;
 
-    /// Native button reference dimensions and ownership of a recreated system font.
-    SIZE buttonSize{};
+    /// Ownership of a recreated system font.
     bool ownsFont = false;
 
-    /// DPI-scaled width reduction, scrollable content dimensions and wheel accumulation.
-    int widthReduction = 0;
+    /// Scrollable content dimensions and wheel accumulation.
     int contentHeight = 0;
     int scrollPosition = 0;
     int wheelRemainder = 0;
@@ -67,8 +65,8 @@ private:
     /// Retains detected changes until the user successfully applies the preferences.
     bool applyPending = false;
 
-    /// Applies the requested DPI-scaled width reduction once for the current window DPI.
-    void ResizeWidth();
+    /// Applies the initial compact width before the first layout.
+    void ResizeWidth() const;
 
     /// Limits the dialog to its monitor work area and exposes a native scrollbar only when content overflows.
     void FitHeight(int heightOfContent);

@@ -53,38 +53,6 @@ struct MessageTab {
     CHARRANGE selection{};
 };
 
-/// Retains one native RichEdit character-format run for the modern vector-printing path.
-struct PrintTextRun {
-    UINT start;
-    UINT length;
-    COLORREF color;
-    LONG heightTwips;
-    LONG weight;
-    bool italic;
-    bool underline;
-    bool strikeOut;
-    wchar_t family[LF_FACESIZE];
-};
-
-/// Owns a printer context and a report snapshot for one cancellable background print job.
-struct PrintJob {
-    HWND target;
-    HDC printer;
-    wchar_t* report;
-    BYTE* richText;
-    ULONG richTextSize;
-    PrintTextRun* formats;
-    UINT formatCount;
-    HRESULT(*formatLayout)(const PrintJob* job, IUnknown* layout, IUnknown* context, UINT start, UINT length);
-    LOGFONTW font;
-    RECT margins;
-    UINT fontDpi;
-    wchar_t title[MAX_PATH];
-    volatile LONG canceled;
-    bool printToFile;
-    bool success;
-};
-
 /// Owns the native viewer, message tabs, information forms and print sessions.
 class MainForm {
 

@@ -27,7 +27,6 @@
 #include <windows.h>
 #include <objbase.h>
 #include <shellapi.h>
-
 #include "ZfoViewer.h"
 #include "MainForm.h"
 #include "resource.h"
@@ -51,6 +50,8 @@
 #include <new>
 
 #undef MessageBoxW
+
+using FormIconMetricFunction = int(WINAPI*)(int, UINT);
 
 /// Records measured ascent, descent and external leading for wrapped interface text.
 struct UiTextLine {
@@ -93,6 +94,7 @@ static constexpr DWORD PreserveExtensionCaseOption = 0x400;
 /// Registry namespace for application preferences, recent files and Help placement.
 static constexpr wchar_t SettingsKey[] = L"Software\\FortSoft\\ZfoViewer";
 
+static thread_local HWND modalInformationOwner = nullptr;
 static InformationWordBreakState informationWordBreakState;
 
 /// Image-export diagnostics indexed in the same order as the six image formats.
@@ -125,6 +127,75 @@ const ExportChoice exportChoices[] = {
     { 16, TXT_TIFF_FORMAT, L"*.tif", L"tif" },
     { 17, TXT_WEBP_FORMAT, L"*.webp", L"webp" }
 };
+
+static LRESULT CALLBACK InformationModalFilter(int code, WPARAM wParam, LPARAM lParam) {
+    MSG* message = reinterpret_cast<MSG*>(lParam);
+    if (code == MSGF_DIALOGBOX
+            && message->message >= WM_KEYFIRST
+            && message->message <= WM_KEYLAST
+            && TranslateModalInformationMessage(modalInformationOwner, *message)) {
+        return 1;
+    }
+    return CallNextHookEx(nullptr, code, wParam, lParam);
+}
+
+static int FormIconMetric(int metric, UINT dpi) {
+    static const FormIconMetricFunction getMetrics =
+        reinterpret_cast<FormIconMetricFunction>(GetProcAddress(GetModuleHandleW(L"user32.dll"),
+            "GetSystemMetricsForDpi"));
+    return getMetrics == nullptr ? GetSystemMetrics(metric) : getMetrics(metric, dpi);
+}
+
+std::wstring InformationHelpText(AppLanguage language, bool applicationMode) {
+    return GetLocalizedText(language, applicationMode ? TXT_APPLICATION_HELP : TXT_SCREEN_SAVER_HELP);
+}
+
+void SaveInformationWindowPositions(const AppSettings& settings) {
+    SaveWindowPositions(settings);
+}
+
+HICON LoadInformationFormIcon(HINSTANCE instance, int size) {
+    return static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(IDI_ZFOVIEWER),
+        IMAGE_ICON, size, size, LR_SHARED));
+}
+
+void ApplyInformationFormIcons(HWND window, HINSTANCE instance, int iconIndex) {
+    UINT resource = iconIndex == 1 ? IDI_FIND : IDI_ZFOVIEWER;
+    UINT dpi = GetSystemDialogDpi(window);
+    const int types[] = { ICON_SMALL, ICON_BIG };
+    for (int type : types) {
+        int width = FormIconMetric(type == ICON_SMALL ? SM_CXSMICON : SM_CXICON, dpi);
+        int height = FormIconMetric(type == ICON_SMALL ? SM_CYSMICON : SM_CYICON, dpi);
+        HICON icon = static_cast<HICON>(LoadImageW(instance, MAKEINTRESOURCEW(resource),
+            IMAGE_ICON, width, height, LR_SHARED));
+        if (icon != nullptr) {
+            SendMessageW(window, WM_SETICON, type, reinterpret_cast<LPARAM>(icon));
+        }
+    }
+}
+
+INT_PTR ShowModalInformationForm(HINSTANCE instance, const DLGTEMPLATE* definition, HWND owner,
+        DLGPROC procedure, LPARAM parameter) {
+    HWND previous = modalInformationOwner;
+    modalInformationOwner = owner;
+    HHOOK hook = SetWindowsHookExW(WH_MSGFILTER, InformationModalFilter, nullptr, GetCurrentThreadId());
+    if (hook == nullptr) {
+        modalInformationOwner = previous;
+        OutputDebugStringW(L"Could not install the modal information-dialog message filter.\n");
+        return -1;
+    }
+    INT_PTR result = DialogBoxIndirectParamW(instance, definition, owner, procedure, parameter);
+    if (!UnhookWindowsHookEx(hook)) {
+        OutputDebugStringW(L"Could not release the modal information-dialog message filter.\n");
+    }
+    modalInformationOwner = previous;
+    return result;
+}
+
+bool TranslateModalInformationMessage(HWND owner, MSG& message) {
+    MainForm* form = reinterpret_cast<MainForm*>(GetWindowLongPtrW(owner, GWLP_USERDATA));
+    return form != nullptr && form->Translate(message);
+}
 
 /// Uses the application's product caption for diagnostics raised by shared components.
 int WINAPI ComponentMessageBoxW(HWND owner, LPCWSTR text, LPCWSTR title, UINT type) {
@@ -190,9 +261,12 @@ wchar_t* CopyControlText(HWND control) {
     GetClassNameW(control, className, ARRAYSIZE(className));
     bool rich = _wcsnicmp(className, L"RichEdit", 8) == 0;
     GETTEXTLENGTHEX lengthRequest{ GTL_PRECISE | GTL_NUMCHARS, 1200 };
-    LRESULT length = rich
-        ? SendMessageW(control, EM_GETTEXTLENGTHEX, reinterpret_cast<WPARAM>(&lengthRequest), 0)
-        : GetWindowTextLengthW(control);
+    LRESULT length;
+    if (rich) {
+        length = SendMessageW(control, EM_GETTEXTLENGTHEX, reinterpret_cast<WPARAM>(&lengthRequest), 0);
+    } else {
+        length = GetWindowTextLengthW(control);
+    }
     if (length < 0 || length >= MAXDWORD / sizeof(wchar_t) - 1) {
         return nullptr;
     }
@@ -361,9 +435,12 @@ static LRESULT CALLBACK ComboBoxDropDownSubclassProc(HWND window, UINT msg, WPAR
                 && GetWindowRect(combo, &comboRect)) {
             LONG workWidth = information.rcWork.right - information.rcWork.left;
             if (workWidth > 0) {
-                LONG currentWidth = position->flags & SWP_NOSIZE
-                    ? current.right - current.left
-                    : position->cx;
+                LONG currentWidth;
+                if (position->flags & SWP_NOSIZE) {
+                    currentWidth = current.right - current.left;
+                } else {
+                    currentWidth = position->cx;
+                }
                 LONG minimumWidth = std::max(1L, comboRect.right - comboRect.left);
                 LONG width = std::max(minimumWidth, std::min(currentWidth, workWidth));
                 LONG left = position->flags & SWP_NOMOVE ? current.left : position->x;
@@ -634,8 +711,6 @@ int CALLBACK InformationWordBreakProc(wchar_t* text, int position, int length, i
     return position;
 }
 
-
-
 /// Derives text-line metrics from the selected font and glyph extents without clipping the supplied text.
 static UiTextLine GetUiTextLine(HDC dc, const std::wstring& text) {
     TEXTMETRICW metrics = {};
@@ -886,8 +961,12 @@ static HRESULT FormatPrintLayout(const PrintJob* job, IUnknown* text, IUnknown* 
         if (SUCCEEDED(result)) {
             result = layout->SetStrikethrough(run.strikeOut, range);
         }
-        D2D1_COLOR_F color{ GetRValue(run.color) / 255.0f, GetGValue(run.color) / 255.0f,
-            GetBValue(run.color) / 255.0f, 1.0f };
+        D2D1_COLOR_F color{
+            GetRValue(run.color) / 255.0f,
+            GetGValue(run.color) / 255.0f,
+            GetBValue(run.color) / 255.0f,
+            1.0f
+        };
         Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
         if (SUCCEEDED(result)) {
             result = target->CreateSolidColorBrush(color, &brush);
@@ -970,25 +1049,6 @@ static bool CaptureRichPrintJob(PrintJob* job, HWND edit) {
     }
 }
 
-/// Releases the printer context, captured text, rich-format buffers and process-heap print-job storage.
-void FreePrintJob(PrintJob* job) {
-    if (job) {
-        if (job->printer) {
-            DeleteDC(job->printer);
-        }
-        if (job->report) {
-            HeapFree(GetProcessHeap(), 0, job->report);
-        }
-        if (job->richText) {
-            HeapFree(GetProcessHeap(), 0, job->richText);
-        }
-        if (job->formats) {
-            HeapFree(GetProcessHeap(), 0, job->formats);
-        }
-        HeapFree(GetProcessHeap(), 0, job);
-    }
-}
-
 /// Captures text, rich formatting, font, DPI, margins and title independently of later edits.
 PrintJob* CapturePrintJob(HWND owner, HWND edit, const wchar_t* title, const RECT& margins) {
     PrintJob* job = static_cast<PrintJob*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PrintJob)));
@@ -1030,7 +1090,8 @@ PrintJob* ChooseReportPrinter(HWND owner, HWND edit, const wchar_t* title,
         wcsncpy_s(error, errorCapacity, T(TXT_PRINT_FAILED), _TRUNCATE);
         return nullptr;
     }
-    job->printer = settings.ChoosePrinter(owner, &job->printToFile, error, errorCapacity);
+    job->printer = settings.ChoosePrinter(owner, &job->printToFile, T(TXT_PRINT_FAILED),
+        error, errorCapacity);
     if (!job->printer) {
         FreePrintJob(job);
         return nullptr;
@@ -1169,10 +1230,50 @@ SIZE InformationDialogUnits(HFONT font, int x, int y) {
     return SIZE{ MulDiv(x, units.cx, 4), MulDiv(y, units.cy, 8) };
 }
 
-/// Measures the common native Close button using its current font and existing dialog-unit minimum and
-/// padding.
-SIZE InformationButtonSize(HWND window, HFONT font) {
-    SIZE button = InformationDialogUnits(font, DIALOG_BUTTON_WIDTH_DLU, DIALOG_BUTTON_HEIGHT_DLU);
+/// Skips a native dialog-template string or ordinal resource identifier.
+static const WORD* SkipDialogTemplateString(const WORD* value) {
+    if (*value == 0xFFFF) {
+        return value + 2;
+    }
+    while (*value != 0) {
+        value++;
+    }
+    return value + 1;
+}
+
+/// Scales a control's authored dimensions from its extended dialog resource using the current font.
+static SIZE DialogResourceControlSize(int resourceId, int id, HFONT font) {
+    HINSTANCE hInstance = GetModuleHandleW(nullptr);
+    HRSRC resource = FindResourceW(hInstance, MAKEINTRESOURCEW(resourceId), RT_DIALOG);
+    HGLOBAL loaded = resource == nullptr ? nullptr : LoadResource(hInstance, resource);
+    const WORD* definition = loaded == nullptr ? nullptr : static_cast<const WORD*>(LockResource(loaded));
+    if (definition == nullptr || SizeofResource(hInstance, resource) < 26 || definition[1] != 0xFFFF) {
+        return SIZE{};
+    }
+    WORD count = definition[8];
+    const WORD* item = SkipDialogTemplateString(definition + 13);
+    item = SkipDialogTemplateString(item);
+    item = SkipDialogTemplateString(item);
+    if ((definition[6] & DS_SETFONT) != 0) {
+        item = SkipDialogTemplateString(item + 3);
+    }
+    for (WORD index = 0; index < count; index++) {
+        item = reinterpret_cast<const WORD*>(reinterpret_cast<UINT_PTR>(item) + 3 & ~UINT_PTR{ 3 });
+        int controlId = item[10] | item[11] << 16;
+        if (controlId == id) {
+            return InformationDialogUnits(font, static_cast<short>(item[8]), static_cast<short>(item[9]));
+        }
+        item = SkipDialogTemplateString(item + 12);
+        item = SkipDialogTemplateString(item);
+        WORD bytes = *item++;
+        item = reinterpret_cast<const WORD*>(reinterpret_cast<const BYTE*>(item) + bytes);
+    }
+    return SIZE{};
+}
+
+/// Uses the template dimensions and widens the Close button for its current text when necessary.
+SIZE InformationButtonSize(HWND window, HFONT font, int resourceId) {
+    SIZE button = DialogResourceControlSize(resourceId, ID_INFO_CLOSE, font);
     SIZE ideal = {};
     HWND closeButton = GetDlgItem(window, ID_INFO_CLOSE);
     if (!SendMessageW(closeButton, BCM_GETIDEALSIZE, 0, reinterpret_cast<LPARAM>(&ideal))) {
@@ -1257,7 +1358,7 @@ void UpdateInformationWindowsTopmost(HWND) {}
 /// Keeps Return, Escape and Tab available to native dialog navigation and removes the subclass on
 /// destruction.
 LRESULT CALLBACK InformationTextSubclassProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
-    UINT_PTR subclassId, DWORD_PTR) {
+        UINT_PTR subclassId, DWORD_PTR) {
     if (message == WM_GETDLGCODE) {
         LRESULT result = DefSubclassProc(window, message, wParam, lParam);
         if (wParam == VK_RETURN || wParam == VK_ESCAPE || wParam == VK_TAB) {
@@ -1364,8 +1465,11 @@ bool SaveSettings(const AppSettings& settings) {
         DWORD options = 0;
         DWORD size = sizeof(options);
         RegGetValueW(key, nullptr, L"Options", RRF_RT_REG_DWORD, nullptr, &options, &size);
-        options = options & ~(MultipleInstancesOption | CloseTabsOnDoubleClickOption
-                | SmoothScrollingOption | DisableMessageColorsOption | DisableSourceColorsOption
+        options = options & ~(MultipleInstancesOption
+                | CloseTabsOnDoubleClickOption
+                | SmoothScrollingOption
+                | DisableMessageColorsOption
+                | DisableSourceColorsOption
                 | PreserveExtensionCaseOption)
             | (settings.multipleInstances ? MultipleInstancesOption : 0)
             | (settings.closeTabsOnDoubleClick ? CloseTabsOnDoubleClickOption : 0)
@@ -1410,8 +1514,8 @@ bool SaveSettings(const AppSettings& settings) {
 /// Persists Help placement only; About placement stays in memory for the running instance.
 void SaveWindowPositions(const AppSettings& settings) {
     HKEY key = nullptr;
-    const LSTATUS result = RegCreateKeyExW(HKEY_CURRENT_USER, SettingsKey, 0, nullptr, 0, KEY_SET_VALUE,
-        nullptr, &key, nullptr);
+    const LSTATUS result = RegCreateKeyExW(HKEY_CURRENT_USER, SettingsKey, 0, nullptr, 0,
+        KEY_SET_VALUE, nullptr, &key, nullptr);
     if (result != ERROR_SUCCESS) {
         return;
     }
@@ -1423,8 +1527,8 @@ void SaveWindowPositions(const AppSettings& settings) {
 /// Reads a validated, double-null-terminated recent-file list and returns its length in UTF-16 units.
 DWORD LoadRecentFilesSetting(wchar_t* paths, DWORD capacity) {
     DWORD bytes = capacity * sizeof(wchar_t);
-    const LSTATUS result = RegGetValueW(HKEY_CURRENT_USER, SettingsKey, L"RecentFiles", RRF_RT_REG_MULTI_SZ,
-        nullptr, paths, &bytes);
+    const LSTATUS result = RegGetValueW(HKEY_CURRENT_USER, SettingsKey, L"RecentFiles",
+        RRF_RT_REG_MULTI_SZ, nullptr, paths, &bytes);
     if (result != ERROR_SUCCESS || bytes < 2 * sizeof(wchar_t) || bytes % sizeof(wchar_t)) {
         return 0;
     }
@@ -1435,8 +1539,8 @@ DWORD LoadRecentFilesSetting(wchar_t* paths, DWORD capacity) {
 /// Stores the double-null-terminated recent-file list as a registry multi-string value.
 bool SaveRecentFilesSetting(const wchar_t* paths, DWORD length) {
     HKEY key = nullptr;
-    LSTATUS result = RegCreateKeyExW(HKEY_CURRENT_USER, SettingsKey, 0, nullptr, 0, KEY_SET_VALUE,
-        nullptr, &key, nullptr);
+    LSTATUS result = RegCreateKeyExW(HKEY_CURRENT_USER, SettingsKey, 0, nullptr, 0,
+        KEY_SET_VALUE, nullptr, &key, nullptr);
     if (result != ERROR_SUCCESS) {
         return false;
     }
@@ -1450,8 +1554,8 @@ bool SaveRecentFilesSetting(const wchar_t* paths, DWORD length) {
 DWORD LoadExportType() {
     DWORD type = 2;
     DWORD size = sizeof(type);
-    const LSTATUS result = RegGetValueW(HKEY_CURRENT_USER, SettingsKey, L"ExportFormat", RRF_RT_REG_DWORD,
-        nullptr, &type, &size);
+    const LSTATUS result = RegGetValueW(HKEY_CURRENT_USER, SettingsKey, L"ExportFormat",
+        RRF_RT_REG_DWORD, nullptr, &type, &size);
     if (result != ERROR_SUCCESS || type < 1 || type > ARRAYSIZE(exportChoices)) {
         type = 2;
     }
@@ -1461,8 +1565,8 @@ DWORD LoadExportType() {
 /// Remembers the selected export format for the next export dialog.
 void SaveExportType(DWORD type) {
     HKEY key = nullptr;
-    const LSTATUS result = RegCreateKeyExW(HKEY_CURRENT_USER, SettingsKey, 0, nullptr, 0, KEY_SET_VALUE,
-        nullptr, &key, nullptr);
+    const LSTATUS result = RegCreateKeyExW(HKEY_CURRENT_USER, SettingsKey, 0, nullptr, 0,
+        KEY_SET_VALUE, nullptr, &key, nullptr);
     if (result == ERROR_SUCCESS) {
         RegSetValueExW(key, L"ExportFormat", 0, REG_DWORD, reinterpret_cast<const BYTE*>(&type),
             sizeof(type));
@@ -1500,9 +1604,12 @@ static int RunMainWindow(HINSTANCE instance, AppSettings& settings, SingleInstan
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ PWSTR, _In_ int) {
     AppSettings settings;
     LoadSettings(settings);
-    AppLanguage language = settings.language < 0
-        ? ApplicationLanguageFromLangId(GetUserDefaultUILanguage())
-        : static_cast<AppLanguage>(settings.language);
+    AppLanguage language;
+    if (settings.language < 0) {
+        language = ApplicationLanguageFromLangId(GetUserDefaultUILanguage());
+    } else {
+        language = static_cast<AppLanguage>(settings.language);
+    }
     SetApplicationLanguage(language);
     int count = 0;
     PWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &count);
@@ -2042,8 +2149,8 @@ static bool WriteEncodedText(HANDLE file, const wchar_t* report, DWORD type, boo
     if (success && type == 1) {
         wchar_t* restored = static_cast<wchar_t*>(HeapAlloc(GetProcessHeap(), 0, length * sizeof(wchar_t)));
         if (restored) {
-            int count = MultiByteToWideChar(codePage, 0,
-                reinterpret_cast<const char*>(bytes), size, restored, length);
+            int count = MultiByteToWideChar(codePage, 0, reinterpret_cast<const char*>(bytes),
+                size, restored, length);
             *encodingError = count != length;
             for (int index = 0; index < length && !*encodingError; ++index) {
                 *encodingError = restored[index] != report[index];

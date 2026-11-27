@@ -14,7 +14,7 @@
 #define IDD_FIND                                204
 
 #define DIALOG_BUTTON_WIDTH_DLU                 43
-#define DIALOG_BUTTON_HEIGHT_DLU                12
+#define DIALOG_BUTTON_HEIGHT_DLU                13
 #define ABOUT_LICENSE_WIDTH_96DPI               508
 #define ABOUT_LICENSE_HEIGHT_96DPI              267
 
